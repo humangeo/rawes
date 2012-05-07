@@ -9,5 +9,6 @@ setup(name='rawes',
     author='Dan Noble',
     author_email='@dwnoble',
     url='http://github.com/dwnoble/rawes',
-    packages=['thrift', 'requirements'],
+    packages=['rawes'],
+	install_requires=['requests'],
 )
