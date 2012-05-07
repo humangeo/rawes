@@ -26,4 +26,9 @@ class HttpConnection(object):
         if kwargs.has_key('data') and type(kwargs['data']) == dict:
             kwargs['data'] = json.dumps(kwargs['data'])
         response = requests.request(method, '%s/%s' % (self.url,path), **kwargs)
-        return response
+        return HttpConnection.decode(response)
+    
+    @classmethod
+    def decode(self, response):
+        """docstring for decode"""
+        return json.loads(response.text)

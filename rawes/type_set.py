@@ -1,5 +1,5 @@
-import urllib
 import json
+import query_helpers
 
 class TypeSet(object):
     """docstring for TypeSet"""
@@ -11,44 +11,45 @@ class TypeSet(object):
     
     def search(self, data, params={}):
         """Search for a document"""
-        query_string = self._build_query_string(params)
+        params['timeout'] = params['timeout'] if params.has_key('timeout') else self.elastic.timeout
+        query_string = query_helpers.build_query_string(params)
         path = '%s/_search%s' % (self.base_path, query_string)
         response = self.elastic.get(path,data=data)
-        return json.loads(response.text)
+        return response
     
     def index(self, data, _id=None, params={}):
         """Index a new document"""
-        query_string = self._build_query_string(params)
+        query_string = query_helpers.build_query_string(params)
         path = '%s/%s%s' % (self.base_path, _id, query_string)
         response = self.elastic.put(path=path,data=data) if _id else self.elastic.post(path=path,data=data)
-        return json.loads(response.text)
+        return response
     
     def get(self, _id, params={}):
         """Retrieve a document by _id"""
-        query_string = self._build_query_string(params)
+        query_string = query_helpers.build_query_string(params)
         path = '%s/%s%s' % (self.base_path, _id, query_string)
         response = self.elastic.get(path)
-        return json.loads(response.text)
+        return response
     
     def multi_get(self, data):
         """Retrieves multiple documents by id"""
         path = '%s/_mget' % self.base_path
         response = self.elastic.get(path, data=data)
-        return json.loads(response.text)
+        return response
 
     def delete(self, _id, params={}):
         """Deletes a document by _id"""
-        query_string = self._build_query_string(params)
+        query_string = query_helpers.build_query_string(params)
         path = '%s/%s%s' % (self.base_path, _id, query_string)
         response = self.elastic.delete(path=path)
-        return json.loads(response.text)
+        return response
     
     def update(self, data, _id, params={}):
         """Updates a document by _id"""
-        query_string = self._build_query_string(params)
+        query_string = query_helpers.build_query_string(params)
         path = '%s/%s/_update%s' % (self.base_path, _id, query_string)
         response = self.elastic.post(path=path)
-        return json.loads(response.text)
+        return response
     
     def _build_base_path(self, indices, types):
         """docstring for _build_base_path"""
@@ -56,6 +57,3 @@ class TypeSet(object):
         types_string = types if type(types) == str else ','.join(types)
         return '%s/%s' % (indices, types_string)
     
-    def _build_query_string(self, params):
-        """Returns a query string with leading ?"""
-        return '?%s' % urllib.urlencode(params) if len(params) else ''

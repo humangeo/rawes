@@ -9,7 +9,7 @@ class Elastic(object):
         url_parts = url.split(':')
         self.host = url_parts[0]
         self.port = int(url_parts[1]) if len(url_parts) == 2 else 9200
-        self.timeout = timeout
+        self.timeout = timeout*1000
         
         if (connection_type == None):
             self.connection_type = 'http' if self.port == 9200 else 'thrift'
@@ -35,4 +35,3 @@ class Elastic(object):
     
     def __getitem__(self, indices):
         return IndexSet(indices, self)
-    
