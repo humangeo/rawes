@@ -22,6 +22,9 @@ class HttpConnection(object):
     def delete(self, path, **kwargs):
         return self.request('delete', path, **kwargs)
     
+    def head(self, path, **kwargs):
+        return self.request('head', path, **kwargs)
+    
     def request(self, method, path, **kwargs):
         if kwargs.has_key('data') and type(kwargs['data']) == dict:
             kwargs['data'] = json.dumps(kwargs['data'])
@@ -30,8 +33,7 @@ class HttpConnection(object):
     
     @classmethod
     def decode(self, response):
-        """docstring for decode"""
-        try:
-            return json.loads(response.text)
-        except:
+        if (response.text == ''):
             return response.status_code < 300
+        return json.loads(response.text)
+            

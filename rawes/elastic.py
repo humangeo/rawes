@@ -33,5 +33,8 @@ class Elastic(object):
     def delete(self, path, **kwargs):
         return self.connection.delete(path, **kwargs)
     
+    def head(self, path, **kwargs):
+        return self.connection.head(path, **kwargs)
+    
     def __getitem__(self, indices):
         return IndexSet(indices, self)
