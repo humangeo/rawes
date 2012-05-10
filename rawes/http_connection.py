@@ -31,4 +31,7 @@ class HttpConnection(object):
     @classmethod
     def decode(self, response):
         """docstring for decode"""
-        return json.loads(response.text)
+        try:
+            return json.loads(response.text)
+        except:
+            return response.status_code < 300
