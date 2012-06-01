@@ -8,6 +8,7 @@ class HttpConnection(object):
         self.protocol = 'http'
         self.host = host
         self.port = port
+        self.session = requests.session()
         self.url = '%s://%s:%s' % (self.protocol,self.host,self.port)
     
     def get(self, path, **kwargs):
@@ -28,7 +29,7 @@ class HttpConnection(object):
     def request(self, method, path, **kwargs):
         if kwargs.has_key('data') and type(kwargs['data']) == dict:
             kwargs['data'] = json.dumps(kwargs['data'])
-        response = requests.request(method, '%s/%s' % (self.url,path), **kwargs)
+        response = self.session.request(method, '%s/%s' % (self.url,path), **kwargs)
         return HttpConnection.decode(response)
     
     @classmethod
