@@ -6,80 +6,132 @@ import rawes
 import unittest
 import config
 
+import logging
+log_level = logging.ERROR
+log_format = '[%(levelname)s] [%(name)s] %(asctime)s - %(message)s'
+logging.basicConfig(format=log_format,datefmt='%m/%d/%Y %I:%M:%S %p',level=log_level)
+soh = logging.StreamHandler(sys.stdout)
+soh.setLevel(log_level)
+logger=logging.getLogger("rawes.tests")
+logger.addHandler(soh)
+
 class TestElasticCore(unittest.TestCase):
     
     @classmethod
     def setUpClass(self):
         http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
-        self.elastic = rawes.Elastic(url=http_url)
-        self.elastic_index = self.elastic[config.ES_INDEX]
-        self.elastic_type = self.elastic[config.ES_INDEX][config.ES_TYPE]
-        self.elastic_index.delete_index()
-        self.elastic_index.create_index()
-    
-    def test_index(self):
-        """docstring for test_index"""
-        # test create with id
-        doc1 = {'name' : 'Test Index'}
-        doc1_id = 'test_index_1'
-        self.assertFalse(self._exists(doc1_id))
-        result = self.elastic_type.index(data=doc1, _id=doc1_id)
-        self.assertTrue(result['ok'])
-        self.assertTrue(self._exists(doc1_id))
+        self.es_http = rawes.Elastic(url=http_url)
+        thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
+        self.es_thrift = rawes.Elastic(url=thrift_url)
+
+    def test_http(self):
+        self._reset_indices(self.es_http)
+        self._test_document_search(self.es_http)
+        self._test_document_update(self.es_http)
+        self._test_document_delete(self.es_http)
+
+    def test_thrift(self):
+        self._reset_indices(self.es_thrift)
+        self._test_document_search(self.es_thrift)
+        self._test_document_update(self.es_thrift)
+        self._test_document_delete(self.es_thrift)
+
+    def _reset_indices(self, es):
+        # If the index does not exist, test creating it and deleting it
+        index_status_result = es.get('%s/_status' % config.ES_INDEX)
+        if index_status_result.has_key('status') and index_status_result['status'] == 404:
+            create_index_result = es.put(config.ES_INDEX)
+
+        # Test deleting the index
+        delete_index_result = es.delete(config.ES_INDEX)
+        index_deleted = es.get('%s/_status' % config.ES_INDEX)['status'] == 404
+        self.assertTrue(index_deleted)
+
+        # Now remake the index
+        es.put(config.ES_INDEX)
+        index_exists = es.get('%s/_status' % config.ES_INDEX)['ok'] == True
+        self.assertTrue(index_exists)
+
+    def _test_document_search(self, es):
+        # Create some sample documents        
+        result1 = es.post('%s/tweet/' % config.ES_INDEX, data={
+            'user' : 'dwnoble',
+            'post_date' : '2012-8-27T08:00:30',
+            'message' : 'Tweeting about elasticsearch'
+        }, params={
+            'refresh' : True
+        })
+        self.assertTrue(result1['ok'])
+        result2 = es.put('%s/post/2' % config.ES_INDEX, data={
+            'user' : 'dan',
+            'post_date' : '2012-8-27T09:30:03',
+            'title' : 'Elasticsearch',
+            'body' : 'Blogging about elasticsearch'
+        }, params={
+            'refresh' : 'true'
+        })
+        self.assertTrue(result2['ok'])
+                
+        # Search for documents of one type
+        search_result = es.get('%s/tweet/_search' % config.ES_INDEX, data={
+            'query' : {
+                'match_all' : {}
+            }
+        }, params= {
+            'size': 2
+        })
+        self.assertTrue(search_result['hits']['total'] == 1)
+
+        # Search for documents of both types
+        search_result2 = es.get('%s/tweet,post/_search' % config.ES_INDEX, data={
+            'query' : {
+                'match_all' : {}
+            }
+        }, params= {
+            'size': '2'
+        })
+        self.assertTrue(search_result2['hits']['total'] == 2)
+
+    def _test_document_update(self, es):
+        # Ensure the document does not already exist (using alternate syntax)
+        search_result = es[config.ES_INDEX].sometype['123'].get()
+        self.assertFalse(search_result['exists'])
+
+        # Create a sample document (using alternate syntax)
+        insert_result = es[config.ES_INDEX].sometype[123].put(data={
+            'value' : 100,
+            'other' : 'stuff'
+        })
+        self.assertTrue(insert_result['ok'])
+
+        # Perform a simple update (using alternate syntax)
+        update_result = es[config.ES_INDEX].sometype['123']._update.post(data={
+            'script' : 'ctx._source.value += value',
+            'params' : {
+                'value' : 50
+            }
+        })
+        self.assertTrue(update_result['ok'])
         
-        # test create without id
-        
-        # test create with a parameter
-        pass
-    
-    def test_delete(self):
-        """docstring for test_delete"""
-        # Create a new document
-        doc = {'name' : 'Test Delete'}
-        result = self.elastic_type.index(data=doc)
-        doc_id = result['_id']
-        
-        self.assertTrue(self._exists(doc_id)) # Make sure that document exists
-        self.elastic_type.delete(_id=doc_id) # Delete the document
-        self.assertFalse(self._exists(doc_id)) # Ensure it no longer exists
-    
-    def test_get(self):
-        # Test basic get
-        doc = {'name' : 'Test Get'}
-        doc_id = 'test_get'
-        self.assertFalse(self._exists(doc_id))
-        self.elastic_type.index(data=doc, _id=doc_id)
-        self.assertTrue(self._exists(doc_id))
-        self.assertEquals(self.elastic_type.get(_id=doc_id)['_source']['name'], 'Test Get')
-        
-        # Test with params
-        doc2 = {'field1' : 'val1', 'field2' : 'val2', 'field3' : 'val3'}
-        doc2_id = 'test_get_2'
-        self.assertFalse(self._exists(doc2_id))
-        self.elastic_type.index(data=doc2, _id=doc2_id)
-        doc2_retrieved = self.elastic_type.get(_id=doc2_id, params={'fields' : 'field1,field2'})
-        self.assertTrue(doc2_retrieved['fields'].has_key('field1'))
-        self.assertTrue(doc2_retrieved['fields'].has_key('field2'))
-        self.assertFalse(doc2_retrieved['fields'].has_key('field3'))
-    
-    def test_multi_get(self):
-        self.elastic_type.index(data={'name' : 'multi_get_doc1'}, _id='multi_get_doc1')
-        self.elastic_type.index(data={'name' : 'multi_get_doc2'}, _id='multi_get_doc2')
-        self.elastic_type.index(data={'name' : 'multi_get_doc3'}, _id='multi_get_doc3')
-        
-        multi_get_query = {
-            "docs" : [
-                {
-                    "_id" : "multi_get_doc1"
-                },
-                {
-                    "_id" : "multi_get_doc2"
-                }
-            ]
-        }
-        result = self.elastic_type.multi_get(data=multi_get_query)
-        self.assertEquals(len(result['docs']),2)
-    
-    def _exists(self, _id):
-        doc = self.elastic_type.get(_id=_id)
-        return doc['exists']
+        # Ensure the value was updated
+        search_result2 = es[config.ES_INDEX].sometype['123'].get()
+        self.assertTrue(search_result2['_source']['value'] == 150)
+
+    def _test_document_delete(self, es):
+        # Ensure the document does not already exist (using alternate syntax)
+        search_result = es[config.ES_INDEX].persontype['555'].get()
+        self.assertFalse(search_result['exists'])
+
+        # Create a sample document (using alternate syntax)
+        insert_result = es[config.ES_INDEX].persontype[555].put(data={
+            'name' : 'bob'
+        })
+        self.assertTrue(insert_result['ok'])
+
+        # Delete the document
+        delete_result = es[config.ES_INDEX].delete('persontype/555')
+        self.assertTrue(delete_result['ok'])
+
+        # Verify the document was deleted
+        search_result = es[config.ES_INDEX]['persontype']['555'].get()
+        self.assertFalse(search_result['exists'])

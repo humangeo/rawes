@@ -4,13 +4,13 @@ from index_set import IndexSet
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', timeout=30, connection_type=None, path='', connection=None):
+    def __init__(self, url='localhost:9200', path='', timeout=30, connection_type=None, connection=None):
         super(Elastic, self).__init__()
         url_parts = url.split(':')
         self.host = url_parts[0]
         self.port = int(url_parts[1]) if len(url_parts) == 2 else 9200
         self.url = '%s:%s' % (self.host, self.port)
-        self.timeout = timeout*1000
+        self.timeout = None if timeout == None else timeout*1000
         self.path=path
         
         if connection_type == None:
@@ -23,9 +23,9 @@ class Elastic(object):
         
         if connection == None:
             if self.connection_type == 'http':
-                self.connection = HttpConnection(self.host, self.port)
+                self.connection = HttpConnection(self.host, self.port, timeout=self.timeout)
             else:
-                self.connection = ThriftConnection(self.host, self.port)
+                self.connection = ThriftConnection(self.host, self.port, timeout=self.timeout)
         else:
             self.connection = connection
     

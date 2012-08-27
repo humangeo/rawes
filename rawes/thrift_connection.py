@@ -14,7 +14,7 @@ except ImportError:
 
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
-    def __init__(self, host, port):
+    def __init__(self, host, port,timeout=None):
         if not thrift_installed:
             raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
         self.protocol = 'thrift'
@@ -22,6 +22,8 @@ class ThriftConnection(object):
         self.port = port
         self.url = '%s://%s:%s' % (self.protocol,self.host,self.port)
         tsocket = TSocket.TSocket(self.host, self.port)
+        if timeout != None:
+            tsocket.setTimeout(timeout*1000)
         transport = TTransport.TBufferedTransport(tsocket)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         self.client = Rest.Client(protocol)
@@ -44,25 +46,35 @@ class ThriftConnection(object):
     
     def request(self, method, path, **kwargs):
         thriftargs = {}
+        
         if kwargs.has_key('data'):
+            body = kwargs['data']
             if type(kwargs['data']) == dict:
-                kwargs['data'] = json.dumps(kwargs['data'])
-            thriftargs['body'] = kwargs['data']
+                body = json.dumps(kwargs['data'])
+            thriftargs['body'] = body
 
         if kwargs.has_key('params'):
-            thriftargs['parameters'] = kwargs['params']
+            thriftargs['parameters'] = self._dict_to_map_str_str(kwargs['params'])
 
         if kwargs.has_key('headers'):
-            thriftargs['headers'] = kwargs['headers']
+            thriftargs['headers'] = self._dict_to_map_str_str(kwargs['headers'])
 
         request = RestRequest(method=method,uri=path,**thriftargs)
         response = self.client.execute(request)
 
-        return ThriftConnection.decode(response)
+        return self._decode(response)
     
-    @classmethod
-    def decode(self, response):
+    def _decode(self, response):
         if (response.body == ''):
             return response.status < 300
         return json.loads(response.body)
+
+    def _dict_to_map_str_str(self,d):
+        """
+        Thrift requires the params and headers dict values to only contain str values. 
+        """
+        return dict(map(
+            lambda (k,v): (k, str(v).lower() if isinstance(v,bool) else str(v)),
+            d.iteritems()  
+        ))
             
