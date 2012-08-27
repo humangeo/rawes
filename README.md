@@ -11,6 +11,12 @@ Features
 * gzip over HTTP support
 * Thrift support
 
+Installation
+------------
+```bash
+$ pip install rawes
+```
+
 Usage
 -----
 Create a connection to elasticsearch
