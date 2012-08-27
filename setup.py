@@ -10,5 +10,5 @@ setup(name='rawes',
     author_email='@dwnoble',
     url='http://github.com/dwnoble/rawes',
     packages=['rawes'],
-	install_requires=['requests==0.11.1'],
+	install_requires=['requests==0.13.9'],
 )
