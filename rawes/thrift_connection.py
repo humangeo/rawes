@@ -13,7 +13,7 @@ except ImportError:
     thrift_installed=False
 
 class ThriftConnection(object):
-    """docstring for ThriftConnection"""
+    """Connects to elasticsearch over thrift protocol"""
     def __init__(self, host, port):
         if not thrift_installed:
             raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
