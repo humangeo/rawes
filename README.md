@@ -19,6 +19,15 @@ import rawes
 es = rawes.Elastic('localhost:9200')
 ```
 
+Search for a document
+```python
+es.get('tweets/tweet/_search', data={
+    'query' : {
+        'match_all' : {}
+    }
+})
+```
+
 The rawes.Elastic constructor takes the following parameters (defaults shown):
 ```python
 rawes.Elastic(
@@ -159,7 +168,7 @@ es_thrift = rawes.Elastic('localhost:8500', connection_type='thrift')
 
 Run Unit Tests
 --------------
-Note: thrift python module required to run unit tests:
+rawes' unit tests require the python thrift module to run:
 ```bash
 $ pip install thrift
 ```
