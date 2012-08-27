@@ -14,23 +14,23 @@ Features
 Usage
 -----
 Create a connection to elasticsearch
-<pre><code>
+```python
 import rawes
 es = rawes.Elastic('localhost:9200')
-</pre></code>
+```
 
 The rawes.Elastic constructor takes the following parameters (defaults shown):
-<pre><code>
+```python
 rawes.Elastic(
     url='localhost:9200', # Path and port to elasticsearch service.  Ports 9500-9600 will use thrift; others http
     path='', # http url path (for example, 'tweets/tweet/_search')
     timeout=30, # Timeout in seconds
     connection_type=None, # Set to 'http' or 'thrift' to explicitly set a protocol
 )
-</pre></code>
+```
 
 An instance of rawes.Elastic ('es' in this case) has methods for get, post, put, delete, and head (for each http verb).  Each method takes the following parameters (defaults shown):
-<pre><code>
+```python
 es.get(
     path='', # HTTP URL path
     data='', # http body.  can be either a string or a python dictionary (will automatically be converted to JSON)
@@ -38,10 +38,10 @@ es.get(
     headers={}, # HTTP headers as a python dictionary
     **kwargs # HTTP only: any additional parameters you wish to pass to the python 'requests' library (for example, basic auth)
 )
-</pre></code>
+```
 
 Create a new document in the twitter index of type tweet with id 1
-<pre><code>
+```python
 es.put('tweets/tweet/1', data={
     'user' : 'dwnoble',
     'post_date' : '2012-8-27T08:00:30',
@@ -53,10 +53,10 @@ es.put('blogs/post/2', data={
     'title' : 'Elasticsearch',
     'body' : 'Blogging about elasticsearch'
 })
-</pre></code>
+```
 
 Search for a document, specifying http params
-<pre><code>
+```python
 es.get('tweets/tweet/_search', data={
     'query' : {
         'match_all' : {}
@@ -64,10 +64,10 @@ es.get('tweets/tweet/_search', data={
 }, params= {
     'size': 2
 })
-</pre></code>
+```
 
 Search for a document with a JSON string
-<pre><code>
+```python
 es.get('tweets,blogs/_search', data="""
 {
     "query" : {
@@ -75,10 +75,10 @@ es.get('tweets,blogs/_search', data="""
     }
 }
 """)
-</pre></code>
+```
 
 Update a document
-<pre><code>
+```python
 es.put('someindex/sometype/123', data={
     'value' : 100,
     'other' : 'stuff'
@@ -89,81 +89,85 @@ es.post('someindex/sometype/123/_update', data={
         'value' : 50
     }
 })
-</pre></code>
+```
 
 Delete a document
-<pre><code>
+```python
 es.delete('tweets/tweet/1')
-</pre></code>
+```
 
 
 Alternate Syntax
 ----------------
-Instead of settings the first argument of a es.&lt;http verb&gt; call to the HTTP URL path, you can also use python attributes and items to build up the url path. For example:
-<pre><code>
+Instead of setting the first argument of a es.&lt;http verb&gt; call to the HTTP URL path, you can also use python attributes and items to build up the url path. For example:
+```python
 es.post('tweets/tweet/', data={
     'user' : 'dwnoble',
     'post_date' : '2012-8-27T09:15:59',
     'message' : 'More tweets about elasticsearch'
 })
-</pre></code>
+```
 
 Becomes:
-<pre><code>
+```python
 es.tweets.tweet.post(data={
     'user' : 'dwnoble',
     'post_date' : '2012-8-27T09:15:59',
     'message' : 'More tweets about elasticsearch'
 })
-</pre></code>
+```
 
-Or (using [] notation - can be useful for characters not allowed when using .s):
-<pre><code>
+Or using [] notation.  This can be useful for characters that are not allowed in python attributes:
+```python
 es['tweets']['tweet'].post(data={
     'user' : 'dwnoble',
     'post_date' : '2012-8-27T09:15:59',
     'message' : 'More tweets about elasticsearch'
 })
-</pre></code>
+```
 
 More examples:
 
 Searching tweets index for documents of type tweets
-<pre><code>
+```python
 es.tweets.tweet._search.get(data={'query' : {'match_all' : {} }})
-</pre></code>
+```
 
 Searching tweets and blogs index for documents of any type using a JSON strings
-<pre><code>
+```python
 es['tweets,blogs']._search.get(data='{"query" : {"match_all" : {}}}')
-</pre></code>
+```
 
 Thrift support
 --------------
 Before thrift will work with rawes, you must install the thrift python module
-<pre><code>
+```bash
 $ pip install thrift
-</pre></code>
+```
 
-<pre><code>
+By default, connections on ports between 9500 and 9600 will use thrift
+```python
 import rawes
-# By default, connections on ports between 9500 and 9600 will use thrift
-es = rawes.Elastic('localhost:9500')
-# If you are using thrift on a non standard port, specify connection_type='thrift' as a parameter
-es2 = rawes.Elastic('localhost:8500', connection_type='thrift')
-</pre></code>
+es_thrift = rawes.Elastic('localhost:9500')
+```
+
+If you are using thrift on a non standard port, specify connection_type='thrift' as a parameter
+```python
+import rawes
+es_thrift = rawes.Elastic('localhost:8500', connection_type='thrift')
+```
 
 Run Unit Tests
 --------------
 Note: thrift python module required to run unit tests:
-<pre><code>
+```bash
 $ pip install thrift
-</pre></code>
+```
 
 Run tests:
-<pre><code>
+```bash
 $ python -m unittest tests
-</pre></code>
+```
 
 Contact
 -------
