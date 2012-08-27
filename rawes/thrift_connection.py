@@ -1,17 +1,22 @@
 import json
 
-from thrift import Thrift
-from thrift.transport import TSocket
-from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol
+try:
+    from thrift import Thrift
+    from thrift.transport import TSocket
+    from thrift.transport import TTransport
+    from thrift.protocol import TBinaryProtocol
 
-from thrift_elasticsearch import Rest
-from thrift_elasticsearch.ttypes import Method, RestRequest
+    from thrift_elasticsearch import Rest
+    from thrift_elasticsearch.ttypes import Method, RestRequest
+    thrift_installed=True
+except ImportError:
+    thrift_installed=False
 
 class ThriftConnection(object):
     """docstring for ThriftConnection"""
     def __init__(self, host, port):
-        super(ThriftConnection, self).__init__()
+        if not thrift_installed:
+            raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
         self.protocol = 'thrift'
         self.host = host
         self.port = port

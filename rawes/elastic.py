@@ -12,7 +12,10 @@ class Elastic(object):
         self.timeout = timeout*1000
         
         if (connection_type == None):
-            self.connection_type = 'http' if self.port == 9200 else 'thrift'
+            if self.port >= 9500 or self.port <= 9600:
+                self.connection_type = 'thrift'
+            else:
+                self.connection_type = 'http'
         else:
             self.connection_type = connection_type
         
