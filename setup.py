@@ -9,6 +9,6 @@ setup(name='rawes',
     author='Dan Noble',
     author_email='@dwnoble',
     url='http://github.com/dwnoble/rawes',
-    packages=['rawes'],
+    packages=['rawes', 'rawes.thrift_elasticsearch'],
 	install_requires=['requests==0.13.9'],
 )

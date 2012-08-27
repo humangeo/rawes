@@ -6,8 +6,8 @@ try:
     from thrift.transport import TTransport
     from thrift.protocol import TBinaryProtocol
 
-    from thrift_elasticsearch import Rest
-    from thrift_elasticsearch.ttypes import Method, RestRequest
+    from rawes.thrift_elasticsearch import Rest
+    from rawes.thrift_elasticsearch.ttypes import Method, RestRequest
     thrift_installed=True
 except ImportError:
     thrift_installed=False
@@ -46,7 +46,7 @@ class ThriftConnection(object):
     
     def request(self, method, path, **kwargs):
         thriftargs = {}
-        
+
         if kwargs.has_key('data'):
             body = kwargs['data']
             if type(kwargs['data']) == dict:
