@@ -1,6 +1,5 @@
 from thrift_connection import ThriftConnection
 from http_connection import HttpConnection
-from index_set import IndexSet
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
