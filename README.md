@@ -3,7 +3,7 @@ rawes
 
 About
 -----
-rawes is an elasticsearch driver for Python.  It provides a small level of abstraction above the requests library - just enough to be useful, but not enough to obscure elasticsearch's great [native api](http://www.elasticsearch.org/guide/reference/api/)
+rawes is an elasticsearch driver for Python.  It provides a small level of abstraction above the requests library - more than enough to be useful, but not enough to obscure elasticsearch's great [native api](http://www.elasticsearch.org/guide/reference/api/)
 
 Features
 --------
