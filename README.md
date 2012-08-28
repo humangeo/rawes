@@ -55,6 +55,9 @@ es.get(
 )
 ```
 
+Examples
+--------
+
 Create a new document in the twitter index of type tweet with id 1
 ```python
 es.put('tweets/tweet/1', data={
