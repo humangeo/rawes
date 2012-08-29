@@ -1,5 +1,6 @@
 #!/usr/bin/env python
-import sys, os
+import sys
+import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import rawes
@@ -9,14 +10,15 @@ import config
 import logging
 log_level = logging.ERROR
 log_format = '[%(levelname)s] [%(name)s] %(asctime)s - %(message)s'
-logging.basicConfig(format=log_format,datefmt='%m/%d/%Y %I:%M:%S %p',level=log_level)
+logging.basicConfig(format=log_format, datefmt='%m/%d/%Y %I:%M:%S %p', level=log_level)
 soh = logging.StreamHandler(sys.stdout)
 soh.setLevel(log_level)
-logger=logging.getLogger("rawes.tests")
+logger = logging.getLogger("rawes.tests")
 logger.addHandler(soh)
 
+
 class TestElasticCore(unittest.TestCase):
-    
+
     @classmethod
     def setUpClass(self):
         http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
@@ -39,7 +41,7 @@ class TestElasticCore(unittest.TestCase):
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
         index_status_result = es.get('%s/_status' % config.ES_INDEX)
-        if index_status_result.has_key('status') and index_status_result['status'] == 404:
+        if 'status' in index_status_result and index_status_result['status'] == 404:
             create_index_result = es.put(config.ES_INDEX)
 
         # Test deleting the index
@@ -53,41 +55,41 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(index_exists)
 
     def _test_document_search(self, es):
-        # Create some sample documents        
+        # Create some sample documents
         result1 = es.post('%s/tweet/' % config.ES_INDEX, data={
-            'user' : 'dwnoble',
-            'post_date' : '2012-8-27T08:00:30',
-            'message' : 'Tweeting about elasticsearch'
+            'user': 'dwnoble',
+            'post_date': '2012-8-27T08:00:30',
+            'message': 'Tweeting about elasticsearch'
         }, params={
-            'refresh' : True
+            'refresh': True
         })
         self.assertTrue(result1['ok'])
         result2 = es.put('%s/post/2' % config.ES_INDEX, data={
-            'user' : 'dan',
-            'post_date' : '2012-8-27T09:30:03',
-            'title' : 'Elasticsearch',
-            'body' : 'Blogging about elasticsearch'
+            'user': 'dan',
+            'post_date': '2012-8-27T09:30:03',
+            'title': 'Elasticsearch',
+            'body': 'Blogging about elasticsearch'
         }, params={
-            'refresh' : 'true'
+            'refresh': 'true'
         })
         self.assertTrue(result2['ok'])
-                
+
         # Search for documents of one type
         search_result = es.get('%s/tweet/_search' % config.ES_INDEX, data={
-            'query' : {
-                'match_all' : {}
+            'query': {
+                'match_all': {}
             }
-        }, params= {
+        }, params={
             'size': 2
         })
         self.assertTrue(search_result['hits']['total'] == 1)
 
         # Search for documents of both types
         search_result2 = es.get('%s/tweet,post/_search' % config.ES_INDEX, data={
-            'query' : {
-                'match_all' : {}
+            'query': {
+                'match_all': {}
             }
-        }, params= {
+        }, params={
             'size': '2'
         })
         self.assertTrue(search_result2['hits']['total'] == 2)
@@ -99,20 +101,20 @@ class TestElasticCore(unittest.TestCase):
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].sometype[123].put(data={
-            'value' : 100,
-            'other' : 'stuff'
+            'value': 100,
+            'other': 'stuff'
         })
         self.assertTrue(insert_result['ok'])
 
         # Perform a simple update (using alternate syntax)
         update_result = es[config.ES_INDEX].sometype['123']._update.post(data={
-            'script' : 'ctx._source.value += value',
-            'params' : {
-                'value' : 50
+            'script': 'ctx._source.value += value',
+            'params': {
+                'value': 50
             }
         })
         self.assertTrue(update_result['ok'])
-        
+
         # Ensure the value was updated
         search_result2 = es[config.ES_INDEX].sometype['123'].get()
         self.assertTrue(search_result2['_source']['value'] == 150)
@@ -124,7 +126,7 @@ class TestElasticCore(unittest.TestCase):
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].persontype[555].put(data={
-            'name' : 'bob'
+            'name': 'bob'
         })
         self.assertTrue(insert_result['ok'])
 
