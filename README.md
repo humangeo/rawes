@@ -187,6 +187,10 @@ Run tests:
 $ python -m unittest tests
 ```
 
+License
+-------
+Apache 2.0 License
+
 Contact
 -------
 [@dwnoble](https://twitter.com/dwnoble)
