@@ -118,6 +118,8 @@ class TestElasticCore(unittest.TestCase):
         insert_result = es[config.ES_INDEX].sometype[123].put(data={
             'value': 100,
             'other': 'stuff'
+        }, params={
+            'refresh': 'true'
         })
         self.assertTrue(insert_result['ok'])
 
@@ -127,6 +129,8 @@ class TestElasticCore(unittest.TestCase):
             'params': {
                 'value': 50
             }
+        }, params={
+            'refresh': 'true'
         })
         self.assertTrue(update_result['ok'])
 
@@ -142,6 +146,8 @@ class TestElasticCore(unittest.TestCase):
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].persontype[555].put(data={
             'name': 'bob'
+        }, params={
+            'refresh': 'true'
         })
         self.assertTrue(insert_result['ok'])
 
