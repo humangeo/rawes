@@ -1,6 +1,5 @@
 #
-#   Copyright [2012] [Dan Noble]
-#   Copyright [2012] [Patrick Ancillotti]
+#   Copyright 2012 The HumanGeo Group, LLC
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -26,8 +25,8 @@ CHANGES = open(os.path.join(here, "CHANGES.md")).read()
 
 install_requires = [
     'requests==0.13.9',
-    'thrift',
-    'anyjson'
+    'thrift==0.8.0',
+    'anyjson==0.3.3'
 ]
 
 classifiers = [
