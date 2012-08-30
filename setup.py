@@ -1,5 +1,6 @@
 #
 #   Copyright [2012] [Dan Noble]
+#   Copyright [2012] [Patrick Ancillotti]
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -14,27 +15,40 @@
 #   limitations under the License.
 #
 
-from setuptools import setup
+import os
 
+from setuptools import setup, find_packages
+
+
+here = os.path.abspath(os.path.dirname(__file__))
+README = open(os.path.join(here, "README.md")).read()
+CHANGES = open(os.path.join(here, "CHANGES.md")).read()
+
+install_requires = [
+    'requests==0.13.9',
+    'anyjson'
+]
+
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "License :: OSI Approved :: Apache License 2.0 (Apache-2.0)",
+    "License :: OSI Approved :: Apache Software License",
+    "Programming Language :: Python",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
 
 setup(name='rawes',
       version='0.2',
       description='rawes elasticsearch driver',
-      long_description=open('README.md').read(),
+      long_description="\n" + README + "\n\n" + CHANGES,
       author='Dan Noble',
       author_email='@dwnoble',
       license='Apache-2.0',
       download_url='https://github.com/humangeo/rawes/tarball/master',
       url='https://github.com/humangeo/rawes',
-      classifiers=[
-          'License :: OSI Approved :: Apache License 2.0 (Apache-2.0)'
-      ],
-      packages=[
-          'rawes',
-          'rawes.thrift_elasticsearch'
-      ],
-      install_requires=[
-          'requests==0.13.9',
-          'anyjson'
-      ]
-      )
+      include_package_data=True,
+      zip_safe=False,
+      classifiers=classifiers,
+      install_requires=install_requires,
+      packages=find_packages()
+)
