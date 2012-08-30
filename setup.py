@@ -26,6 +26,7 @@ CHANGES = open(os.path.join(here, "CHANGES.md")).read()
 
 install_requires = [
     'requests==0.13.9',
+    'thrift',
     'anyjson'
 ]
 
@@ -51,4 +52,4 @@ setup(name='rawes',
       classifiers=classifiers,
       install_requires=install_requires,
       packages=find_packages()
-)
+      )
