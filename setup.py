@@ -34,6 +34,7 @@ setup(name='rawes',
           'rawes.thrift_elasticsearch'
       ],
       install_requires=[
-          'requests==0.13.9'
+          'requests==0.13.9',
+          'anyjson'
       ]
       )

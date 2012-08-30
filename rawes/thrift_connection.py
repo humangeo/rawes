@@ -14,7 +14,7 @@
 #   limitations under the License.
 #
 
-import json
+import anyjson as json
 
 try:
     from thrift import Thrift

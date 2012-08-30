@@ -15,7 +15,7 @@
 #
 
 import requests
-import json
+import anyjson as json
 
 
 class HttpConnection(object):
