@@ -114,6 +114,34 @@ Delete a document
 es.delete('tweets/tweet/1')
 ```
 
+Bulk load
+```python
+bulk_body = '''
+{"index" : {}}
+{"key":"value1"}
+{"index" : {}}
+{"key":"value2"}
+{"index" : {}}
+{"key":"value3"}
+'''
+
+es.post('someindex/sometype/_bulk', data=bulk_body)
+
+bulk_list = [
+    {"index" : {}},
+    {"key":"value4"},
+    {"index" : {}},
+    {"key":"value5"},
+    {"index" : {}},
+    {"key":"value6"}
+]
+
+# Remember to include the trailing \n character for bulk inserts
+bulk_body_2 = '\n'.join(map(json.dumps, bulk_list))+'\n'
+
+es.post('someindex/sometype/_bulk', data=bulk_body_2)
+```
+
 
 Alternate Syntax
 ----------------

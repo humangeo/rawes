@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import rawes
 import unittest
 import config
+import json
 
 import logging
 log_level = logging.ERROR
@@ -46,12 +47,14 @@ class TestElasticCore(unittest.TestCase):
         self._test_document_search(self.es_http)
         self._test_document_update(self.es_http)
         self._test_document_delete(self.es_http)
+        self._test_bulk_load(self.es_http)
 
     def test_thrift(self):
         self._reset_indices(self.es_thrift)
         self._test_document_search(self.es_thrift)
         self._test_document_update(self.es_thrift)
         self._test_document_delete(self.es_thrift)
+        self._test_bulk_load(self.es_thrift)
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
@@ -158,3 +161,39 @@ class TestElasticCore(unittest.TestCase):
         # Verify the document was deleted
         search_result = es[config.ES_INDEX]['persontype']['555'].get()
         self.assertFalse(search_result['exists'])
+
+    def _test_bulk_load(self, es):
+        index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
+
+        bulk_body = '''
+        {"index" : {}}
+        {"key":"value1"}
+        {"index" : {}}
+        {"key":"value2"}
+        {"index" : {}}
+        {"key":"value3"}
+        '''
+
+        es[config.ES_INDEX][config.ES_TYPE].post('_bulk', data = bulk_body, params={
+            'refresh': 'true'
+        })
+        new_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
+
+        self.assertEquals(index_size + 3, new_index_size)
+
+        bulk_list = [
+            {"index" : {}},
+            {"key":"value4"},
+            {"index" : {}},
+            {"key":"value5"},
+            {"index" : {}},
+            {"key":"value6"}
+        ]
+
+        bulk_body_2 = '\n'.join(map(json.dumps, bulk_list))+'\n'
+        es[config.ES_INDEX][config.ES_TYPE].post('_bulk', data = bulk_body_2, params={
+            'refresh': 'true'
+        })
+        newer_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
+
+        self.assertEquals(index_size + 6, newer_index_size)
