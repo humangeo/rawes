@@ -14,8 +14,11 @@
 #   limitations under the License.
 #
 
-import requests
-import json
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 from rawes.encoders import encode_datetime
 
 
