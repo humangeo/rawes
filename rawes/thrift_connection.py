@@ -14,7 +14,8 @@
 #   limitations under the License.
 #
 
-import anyjson as json
+import json
+from rawes.encoders import encode_datetime
 
 try:
     from thrift import Thrift
@@ -67,7 +68,7 @@ class ThriftConnection(object):
         if 'data' in kwargs:
             body = kwargs['data']
             if type(kwargs['data']) == dict:
-                body = json.dumps(kwargs['data'])
+                body = json.dumps(kwargs['data'], default=encode_datetime)
             thriftargs['body'] = body
 
         if 'params' in kwargs:

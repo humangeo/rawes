@@ -15,7 +15,8 @@
 #
 
 import requests
-import anyjson as json
+import json
+from rawes.encoders import encode_datetime
 
 
 class HttpConnection(object):
@@ -45,7 +46,7 @@ class HttpConnection(object):
 
     def request(self, method, path, **kwargs):
         if 'data' in kwargs and type(kwargs['data']) == dict:
-            kwargs['data'] = json.dumps(kwargs['data'])
+            kwargs['data'] = json.dumps(kwargs['data'], default=encode_datetime)
         response = self.session.request(method, '%s/%s' % (self.url, path), **kwargs)
         return self._decode(response)
 

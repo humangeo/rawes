@@ -26,7 +26,7 @@ CHANGES = open(os.path.join(here, "CHANGES.md")).read()
 install_requires = [
     'requests==0.13.9',
     'thrift==0.8.0',
-    'anyjson==0.3.3'
+    'python-dateutil==2.1'
 ]
 
 classifiers = [
