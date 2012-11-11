@@ -21,6 +21,7 @@ except ImportError:
 
 from rawes.encoders import encode_datetime
 
+import requests
 
 class HttpConnection(object):
     """docstring for HttpConnection"""
