@@ -22,6 +22,8 @@ import rawes
 import unittest
 import config
 import json
+from datetime import datetime
+from dateutil import tz
 
 import logging
 log_level = logging.ERROR
@@ -48,6 +50,7 @@ class TestElasticCore(unittest.TestCase):
         self._test_document_update(self.es_http)
         self._test_document_delete(self.es_http)
         self._test_bulk_load(self.es_http)
+        self._test_datetime_encoder(self.es_http)
 
     def test_thrift(self):
         self._reset_indices(self.es_thrift)
@@ -55,6 +58,7 @@ class TestElasticCore(unittest.TestCase):
         self._test_document_update(self.es_thrift)
         self._test_document_delete(self.es_thrift)
         self._test_bulk_load(self.es_thrift)
+        self._test_datetime_encoder(self.es_http)
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
@@ -197,3 +201,36 @@ class TestElasticCore(unittest.TestCase):
         newer_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
 
         self.assertEquals(index_size + 6, newer_index_size)
+
+    def _test_datetime_encoder(self, es):
+        # Ensure the document does not already exist
+        test_type = 'datetimetesttype'
+        test_id = 123
+        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+        self.assertFalse(search_result['exists'])
+
+        # Ensure no mapping exists for this type
+        mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+        self.assertEquals(mapping['status'], 404)
+
+        # Create a sample document with a datetime
+        eastern_timezone = tz.gettz('America/New_York')
+        test_updated_datetime_str = '2012-11-12T09:30:03Z'
+        test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
+        insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
+            'name': 'dateme',
+            'updated' : test_updated
+        }, params={
+            'refresh': 'true'
+        })
+        self.assertTrue(insert_result['ok'])
+
+        # Verify the mapping was created properly
+        mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+        mapping_date_format = mapping[test_type]['properties']['updated']['format']
+        self.assertEquals(mapping_date_format,'dateOptionalTime')
+
+        # Verify the document was created and has the proper date
+        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+        self.assertTruesearch_result['exists'])
+        self.assertEquals('2012-11-12T14:30:03Z',search_result[])
