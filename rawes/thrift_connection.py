@@ -69,10 +69,16 @@ class ThriftConnection(object):
     def request(self, method, path, **kwargs):
         thriftargs = {}
 
+        if 'json_encoder' in kwargs:
+            json_encoder = kwargs['json_encoder']
+            del kwargs['json_encoder']
+        else:
+            json_encoder = encode_datetime
+
         if 'data' in kwargs:
             body = kwargs['data']
             if type(kwargs['data']) == dict:
-                body = json.dumps(kwargs['data'], default=encode_datetime)
+                body = json.dumps(kwargs['data'], default=json_encoder)
             thriftargs['body'] = body
 
         if 'params' in kwargs:
