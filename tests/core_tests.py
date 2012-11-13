@@ -232,5 +232,6 @@ class TestElasticCore(unittest.TestCase):
 
         # Verify the document was created and has the proper date
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
-        self.assertTruesearch_result['exists'])
-        self.assertEquals('2012-11-12T14:30:03Z',search_result[])
+        self.assertTrue(search_result['exists'])
+        self.assertEquals('2012-11-12T14:30:03Z',search_result['_source']['updated'])
+
