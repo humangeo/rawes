@@ -62,12 +62,12 @@ Create a new document in the twitter index of type tweet with id 1
 ```python
 es.put('tweets/tweet/1', data={
     'user' : 'dwnoble',
-    'post_date' : '2012-8-27T08:00:30',
+    'post_date' : '2012-8-27T08:00:30Z',
     'message' : 'Tweeting about elasticsearch'
 })
 es.put('blogs/post/2', data={
     'user' : 'dan',
-    'post_date' : '2012-8-27T09:30:03',
+    'post_date' : '2012-8-27T09:30:03Z',
     'title' : 'Elasticsearch',
     'body' : 'Blogging about elasticsearch'
 })
@@ -183,6 +183,49 @@ Searching tweets and blogs index for documents of any type using a JSON strings
 ```python
 es['tweets,blogs']._search.get(data='{"query" : {"match_all" : {}}}')
 ```
+
+JSON Encoding
+-------------
+
+By default, rawes will encode datetimes (timezone required!) in JSON data to UTC ISO8601 strings to second precision.  If elastic has no mapping defined, this will result in the default mapping of 'dateOptionalTime.'  Timezones are required for automatic serialization: you may want to use a python module like python-dateutil or pytz to make your life easier.
+```python
+from datetime import datetime
+from dateutil import tz
+eastern_timezone = tz.gettz('America/New_York')
+
+es.put('tweets/tweet/99', data={
+    'user' : 'dwnoble',
+    'post_date' : datetime(2012, 8, 27, 8, 0, 30, tzinfo=eastern_timezone),
+    'message' : 'Tweeting about elasticsearch'
+})
+
+es.get('tweets/tweet/99')['_source']['post_date']
+# Returns:
+u'2012-08-27T12:00:30Z'
+```
+
+Alternatively, you can specify a custom JSON encoder using the json_encoder parameter:
+```python
+from datetime import datetime
+from dateutil import tz
+eastern_timezone = tz.gettz('America/New_York')
+
+def encode_custom(obj):
+    if isinstance(obj, datetime):
+        return obj.astimezone(tz.tzutc()).strftime('%Y-%m-%d')
+    raise TypeError(repr(obj) + " is not JSON serializable")
+
+es.put('tweets/tweet/445', data={
+    'user' : 'dwnoble',
+    'post_date' : datetime(2012, 11, 12, 9, 45, 45, tzinfo=eastern_timezone),
+    'message' : 'Tweeting about elasticsearch'
+}, json_encoder=encode_custom)
+
+es.get('tweets/tweet/445')['_source']['post_date']
+# Returns:
+u'2012-11-12'
+```
+
 
 Thrift support
 --------------

@@ -83,7 +83,7 @@ class TestElasticCore(unittest.TestCase):
         # Create some sample documents
         result1 = es.post('%s/tweet/' % config.ES_INDEX, data={
             'user': 'dwnoble',
-            'post_date': '2012-8-27T08:00:30',
+            'post_date': '2012-8-27T08:00:30Z',
             'message': 'Tweeting about elasticsearch'
         }, params={
             'refresh': True
@@ -91,7 +91,7 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(result1['ok'])
         result2 = es.put('%s/post/2' % config.ES_INDEX, data={
             'user': 'dan',
-            'post_date': '2012-8-27T09:30:03',
+            'post_date': '2012-8-27T09:30:03Z',
             'title': 'Elasticsearch',
             'body': 'Blogging about elasticsearch'
         }, params={
@@ -218,7 +218,6 @@ class TestElasticCore(unittest.TestCase):
 
         # Create a sample document with a datetime
         eastern_timezone = tz.gettz('America/New_York')
-        test_updated_datetime_str = '2012-11-12T09:30:03Z'
         test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'dateme',
@@ -251,7 +250,6 @@ class TestElasticCore(unittest.TestCase):
 
         # Create a sample document with a datetime
         eastern_timezone = tz.gettz('America/New_York')
-        test_updated_datetime_str = '2012-11-12T09:30:03Z'
         test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'dateme',

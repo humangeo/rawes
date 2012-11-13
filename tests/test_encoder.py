@@ -19,7 +19,7 @@ from dateutil import tz
 
 def encode_custom(obj):
     """
-    ISO encode datetimes
+    ISO encode datetimes with less precision
     """
     if isinstance(obj, datetime.datetime):
         return obj.astimezone(tz.tzutc()).strftime('%Y-%m-%d')

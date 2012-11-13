@@ -17,7 +17,7 @@
 import datetime
 from dateutil import tz
 
-def encode_datetime(obj):
+def encode_date_optional_time(obj):
     """
     ISO encode datetimes
     """
