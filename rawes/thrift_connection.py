@@ -19,8 +19,6 @@ try:
 except ImportError:
     import json
 
-from rawes.encoders import encode_datetime
-
 try:
     from thrift import Thrift
     from thrift.transport import TSocket
@@ -51,35 +49,19 @@ class ThriftConnection(object):
         self.client = Rest.Client(protocol)
         transport.open()
 
-    def get(self, path, **kwargs):
-        return self.request(Method.GET, path, **kwargs)
-
-    def post(self, path, **kwargs):
-        return self.request(Method.POST, path, **kwargs)
-
-    def put(self, path, **kwargs):
-        return self.request(Method.PUT, path, **kwargs)
-
-    def delete(self, path, **kwargs):
-        return self.request(Method.DELETE, path, **kwargs)
-
-    def head(self, path, **kwargs):
-        return self.request(Method.HEAD, path, **kwargs)
+    method_mappings = {
+        'get' : Method.GET,
+        'post' : Method.POST,
+        'put' : Method.PUT,
+        'delete' : Method.DELETE,
+        'head' : Method.HEAD
+    }
 
     def request(self, method, path, **kwargs):
         thriftargs = {}
 
-        if 'json_encoder' in kwargs:
-            json_encoder = kwargs['json_encoder']
-            del kwargs['json_encoder']
-        else:
-            json_encoder = encode_datetime
-
         if 'data' in kwargs:
-            body = kwargs['data']
-            if type(kwargs['data']) == dict:
-                body = json.dumps(kwargs['data'], default=json_encoder)
-            thriftargs['body'] = body
+            thriftargs['body'] = kwargs['data']
 
         if 'params' in kwargs:
             thriftargs['parameters'] = self._dict_to_map_str_str(kwargs['params'])
@@ -87,7 +69,8 @@ class ThriftConnection(object):
         if 'headers' in kwargs:
             thriftargs['headers'] = self._dict_to_map_str_str(kwargs['headers'])
 
-        request = RestRequest(method=method, uri=path, **thriftargs)
+        mapped_method = ThriftConnection.method_mappings[method]
+        request = RestRequest(method=mapped_method, uri=path, **thriftargs)
         response = self.client.execute(request)
 
         return self._decode(response)

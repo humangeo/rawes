@@ -19,8 +19,6 @@ try:
 except ImportError:
     import json
 
-from rawes.encoders import encode_datetime
-
 import requests
 
 class HttpConnection(object):
@@ -33,30 +31,7 @@ class HttpConnection(object):
         self.session = requests.session(timeout=timeout)
         self.url = '%s://%s:%s' % (self.protocol, self.host, self.port)
 
-    def get(self, path, **kwargs):
-        return self.request('get', path, **kwargs)
-
-    def post(self, path, **kwargs):
-        return self.request('post', path, **kwargs)
-
-    def put(self, path, **kwargs):
-        return self.request('put', path, **kwargs)
-
-    def delete(self, path, **kwargs):
-        return self.request('delete', path, **kwargs)
-
-    def head(self, path, **kwargs):
-        return self.request('head', path, **kwargs)
-
     def request(self, method, path, **kwargs):
-        if 'json_encoder' in kwargs:
-            json_encoder = kwargs['json_encoder']
-            del kwargs['json_encoder']
-        else:
-            json_encoder = encode_datetime
-
-        if 'data' in kwargs and type(kwargs['data']) == dict:
-            kwargs['data'] = json.dumps(kwargs['data'], default=json_encoder)
         response = self.session.request(method, '%s/%s' % (self.url, path), **kwargs)
         return self._decode(response)
 

@@ -14,9 +14,14 @@
 #   limitations under the License.
 #
 
+try:
+    import simplejson as json
+except ImportError:
+    import json
+
 from thrift_connection import ThriftConnection
 from http_connection import HttpConnection
-
+from rawes.encoders import encode_datetime
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
@@ -46,24 +51,35 @@ class Elastic(object):
             self.connection = connection
 
     def put(self, path='', **kwargs):
-        new_path = self._build_path(self.path, path)
-        return self.connection.put(new_path, **kwargs)
+        return self.request('put', path, **kwargs)
 
     def get(self, path='', **kwargs):
-        new_path = self._build_path(self.path, path)
-        return self.connection.get(new_path, **kwargs)
+        return self.request('get', path, **kwargs)
 
     def post(self, path='', **kwargs):
-        new_path = self._build_path(self.path, path)
-        return self.connection.post(new_path, **kwargs)
+        return self.request('post', path, **kwargs)
 
     def delete(self, path='', **kwargs):
-        new_path = self._build_path(self.path, path)
-        return self.connection.delete(new_path, **kwargs)
+        return self.request('delete', path, **kwargs)
 
     def head(self, path='', **kwargs):
+        return self.request('head', path, **kwargs)
+
+    def request(self, method, path, **kwargs):
         new_path = self._build_path(self.path, path)
-        return self.connection.head(new_path, **kwargs)
+
+        # Look for a custom json encoder
+        if 'json_encoder' in kwargs:
+            json_encoder = kwargs['json_encoder']
+            del kwargs['json_encoder']
+        else:
+            json_encoder = encode_datetime
+
+        # Encode data dict to json if necessary
+        if 'data' in kwargs and type(kwargs['data']) == dict:
+            kwargs['data'] = json.dumps(kwargs['data'], default=json_encoder)
+
+        return self.connection.request(method, new_path, **kwargs)
 
     def __getattr__(self, path_item):
         return self.__getitem__(path_item)
