@@ -145,7 +145,7 @@ es.post('someindex/sometype/_bulk', data=bulk_body_2)
 
 Alternate Syntax
 ----------------
-Instead of setting the first argument of a es.&lt;http verb&gt; call to the HTTP URL path, you can also use python attributes and items to build up the url path. For example:
+Instead of setting the first argument of a es.&lt;http verb&gt; call to the HTTP URL path, you can also use python attributes and item accessors to build up the url path. For example:
 ```python
 es.post('tweets/tweet/', data={
     'user' : 'dwnoble',
@@ -163,7 +163,7 @@ es.tweets.tweet.post(data={
 })
 ```
 
-Or using [] notation.  This can be useful for characters that are not allowed in python attributes:
+Or using item accessors ([] notation).  This can be useful for characters that are not allowed in python attributes:
 ```python
 es['tweets']['tweet'].post(data={
     'user' : 'dwnoble',
@@ -174,12 +174,12 @@ es['tweets']['tweet'].post(data={
 
 More examples:
 
-Searching tweets index for documents of type tweets
+Searching the "tweets" index for documents of type "tweets"
 ```python
 es.tweets.tweet._search.get(data={'query' : {'match_all' : {} }})
 ```
 
-Searching tweets and blogs index for documents of any type using a JSON strings
+Searching the "tweets" and "blogs" index for documents of any type using a JSON strings
 ```python
 es['tweets,blogs']._search.get(data='{"query" : {"match_all" : {}}}')
 ```
@@ -187,7 +187,8 @@ es['tweets,blogs']._search.get(data='{"query" : {"match_all" : {}}}')
 JSON Encoding
 -------------
 
-By default, rawes will encode datetimes (timezone required!) in JSON data to UTC ISO8601 strings to second precision.  If elastic has no mapping defined, this will result in the default mapping of 'dateOptionalTime.'  Timezones are required for automatic serialization: you may want to use a python module like python-dateutil or pytz to make your life easier.
+By default, rawes will encode datetimes (timezone required!) to UTC ISO8601 strings with 'second' precision before handing the JSON off to elasticsearch.  If elasticsearch has no mapping defined, this will result in the default mapping of 'dateOptionalTime.'  
+Timezones are required for this automatic serialization: you may want to use a python module like python-dateutil or pytz to make your life easier.
 ```python
 from datetime import datetime
 from dateutil import tz
