@@ -31,7 +31,6 @@ install_requires = [
 
 classifiers = [
     "Development Status :: 4 - Beta",
-    "License :: OSI Approved :: Apache License 2.0 (Apache-2.0)",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules"
