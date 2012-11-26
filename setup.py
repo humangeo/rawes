@@ -26,7 +26,7 @@ CHANGES = open(os.path.join(here, "CHANGES.md")).read()
 install_requires = [
     'requests==0.14.2',
     'thrift==0.8.0',
-    'python-dateutil==2.1'
+    'python-dateutil>=1.0'
 ]
 
 classifiers = [
@@ -37,7 +37,7 @@ classifiers = [
 ]
 
 setup(name='rawes',
-      version='0.3',
+      version='0.3.1',
       description='rawes elasticsearch driver',
       long_description="\n" + README + "\n\n" + CHANGES,
       author='Dan Noble',
