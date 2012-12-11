@@ -24,7 +24,7 @@ README = open(os.path.join(here, "README.md")).read()
 CHANGES = open(os.path.join(here, "CHANGES.md")).read()
 
 install_requires = [
-    'requests==0.14.2',
+    'requests>=0.11.1',
     'thrift==0.8.0',
     'python-dateutil>=1.0'
 ]

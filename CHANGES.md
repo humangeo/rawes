@@ -4,6 +4,7 @@ History
 0.3.2 (2012-12-11)
 ----------------
 * Thrift bug fix (Thanks [anathomical](https://github.com/anathomical)!)
+* Relaxed "requests" requirement from ==0.14.2 to >=0.11.1
 
 0.3.1 (2012-11-26)
 ----------------
