@@ -1,6 +1,10 @@
 History
 =========
 
+0.3.2 (2012-12-11)
+----------------
+* Thrift bug fix (Thanks [anathomical](https://github.com/anathomical)!)
+
 0.3.1 (2012-11-26)
 ----------------
 * Changed python-dateutil version dependency from ==2.1 to >=1.0
