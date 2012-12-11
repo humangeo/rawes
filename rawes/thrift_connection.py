@@ -55,7 +55,7 @@ class ThriftConnection(object):
         'put' : Method.PUT,
         'delete' : Method.DELETE,
         'head' : Method.HEAD
-    }
+    } if thrift_installed else {}
 
     def request(self, method, path, **kwargs):
         thriftargs = {}
