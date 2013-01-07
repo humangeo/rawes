@@ -19,12 +19,14 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import rawes
+from rawes.elastic_exception import ElasticException
 from tests import test_encoder
 import unittest
 import config
 import json
 from datetime import datetime
 from dateutil import tz
+
 
 import logging
 log_level = logging.ERROR
@@ -42,8 +44,10 @@ class TestElasticCore(unittest.TestCase):
     def setUpClass(self):
         http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
         self.es_http = rawes.Elastic(url=http_url)
+        self.es_http_except_on_error = rawes.Elastic(url=http_url,except_on_error=True)
         thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
         self.es_thrift = rawes.Elastic(url=thrift_url)
+        self.es_thrift_except_on_error = rawes.Elastic(url=thrift_url,except_on_error=True)
 
     def test_http(self):
         self._reset_indices(self.es_http)
@@ -53,6 +57,7 @@ class TestElasticCore(unittest.TestCase):
         self._test_bulk_load(self.es_http)
         self._test_datetime_encoder(self.es_http)
         self._test_custom_encoder(self.es_http)
+        self._test_except_on_error(self.es_http, self.es_http_except_on_error)
 
     def test_thrift(self):
         self._reset_indices(self.es_thrift)
@@ -60,8 +65,9 @@ class TestElasticCore(unittest.TestCase):
         self._test_document_update(self.es_thrift)
         self._test_document_delete(self.es_thrift)
         self._test_bulk_load(self.es_thrift)
-        self._test_datetime_encoder(self.es_http)
-        self._test_custom_encoder(self.es_http)
+        self._test_datetime_encoder(self.es_thrift)
+        self._test_custom_encoder(self.es_thrift)
+        self._test_except_on_error(self.es_thrift, self.es_thrift_except_on_error)
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
@@ -222,13 +228,17 @@ class TestElasticCore(unittest.TestCase):
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'dateme',
             'updated' : test_updated
-        }, params={
-            'refresh': 'true'
         })
         self.assertTrue(insert_result['ok'])
 
+        # Refresh the index after setting the mapping
+        refresh_result = es.post('%s/_refresh' % config.ES_INDEX)
+        self.assertTrue(refresh_result['ok'])
+
         # Verify the mapping was created properly
         mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+        if test_type not in mapping:
+            raise(Exception('testy.... : %r' % mapping))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
         self.assertEquals(mapping_date_format,'dateOptionalTime')
 
@@ -259,6 +269,10 @@ class TestElasticCore(unittest.TestCase):
         }, json_encoder=test_encoder.encode_custom)
         self.assertTrue(insert_result['ok'])
 
+        # Flush the index after adding the new item to ensure the mapping is updated
+        refresh_result = es.post('%s/_flush' % config.ES_INDEX)
+        self.assertTrue(refresh_result['ok'])
+
         # Verify the mapping was created properly
         mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
@@ -269,5 +283,41 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(search_result['exists'])
         self.assertEquals('2012-11-12',search_result['_source']['updated'])
 
-    
+    def _test_except_on_error(self, es, es_except_on_error):
+        # Make a new document
+        # Create some sample documents
+        test_type = 'test_exceptions'
+        test_id = 56789
+        result = es.post('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
+            'data': 'test_errors'
+        }, params={
+            'refresh': True
+        })
+
+        # Get the document with the normal es instance
+        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+        self.assertTrue(search_result['exists'])
+
+        # Now get the document with the es instance that throws exception on errors (No exception should be thrown)
+        search_result_2 = es_except_on_error.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+        self.assertTrue(search_result_2['exists'])
+
+        # Try getting a document that doesn't exist from the normal es instance
+        fake_id = 124098124
+        search_result_3= es.get('%s/%s/%s' % (config.ES_INDEX, test_type, fake_id))
+        self.assertFalse(search_result_3['exists'])
+
+        # Now try getting a document that doesn't exist where we raise exceptions on error (this time an exception should be thrown)
+        fake_id = 124098124
+        exception_thrown = False
+        try:
+            search_result_4= es_except_on_error.get('%s/%s/%s' % (config.ES_INDEX, test_type, fake_id))   
+        except ElasticException as e:
+            result = e.result 
+            status_code = e.status_code
+            self.assertFalse(result['exists'])
+            self.assertEquals(status_code,404)
+            exception_thrown = True        
+        self.assertTrue(exception_thrown)
+
 

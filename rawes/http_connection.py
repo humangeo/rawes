@@ -20,16 +20,18 @@ except ImportError:
     import json
 
 import requests
+from elastic_exception import ElasticException
 
 class HttpConnection(object):
     """docstring for HttpConnection"""
-    def __init__(self, host, port, timeout=None):
+    def __init__(self, host, port, timeout=None, except_on_error=False):
         super(HttpConnection, self).__init__()
         self.protocol = 'http'
         self.host = host
         self.port = port
         self.session = requests.session(timeout=timeout)
         self.url = '%s://%s:%s' % (self.protocol, self.host, self.port)
+        self.except_on_error = except_on_error
 
     def request(self, method, path, **kwargs):
         response = self.session.request(method, '%s/%s' % (self.url, path), **kwargs)
@@ -37,5 +39,9 @@ class HttpConnection(object):
 
     def _decode(self, response):
         if (response.text == ''):
-            return response.status_code < 300
-        return json.loads(response.text)
+            decoded = response.status_code < 300
+        else:
+            decoded = json.loads(response.text)
+        if (self.except_on_error and response.status_code >=400):
+            raise(ElasticException(message="ElasticSearch Error: %r" % response.text, result=decoded, status_code=response.status_code))
+        return decoded

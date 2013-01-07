@@ -227,6 +227,33 @@ es.get('tweets/tweet/445')['_source']['post_date']
 u'2012-11-12'
 ```
 
+Error Handling
+--------------
+As of version 0.3.4, you may specify 'except_on_error=True' in the rawes.Elastic constructor to have rawes.Elastic throw a rawes.elastic_exception.ElasticException any time elasticsearch returns an http status code of 400 or greater.
+
+Default Behavior (except_on_error=False):
+```python
+es = rawes.Elastic('localhost:9200')
+es.get('invalid_index/invalid_type/123')
+# Returns
+{u'status': 404, u'error': u'IndexMissingException[[invalid_index] missing]'}
+```
+
+except_on_error=True behavior:
+```python
+from rawes.elastic_exception import ElasticException
+es = rawes.Elastic('localhost:9200', except_on_error=True)
+try:
+    es.get('invalid_index/invalid_type/123')
+except ElasticException as e:
+    # since our index is invalid, this exception handler will run  
+    print e.result 
+    # prints: {u'status': 404, u'error': u'IndexMissingException[[invalid_index] missing]'}
+    print e.status_code
+    # prints: 404
+```
+
+The 'except_on_error=True' setting may become the default in future versions of rawes.
 
 Thrift support
 --------------

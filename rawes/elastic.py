@@ -25,7 +25,7 @@ from rawes.encoders import encode_date_optional_time
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', path='', timeout=30, connection_type=None, connection=None):
+    def __init__(self, url='localhost:9200', path='', timeout=30, connection_type=None, connection=None, except_on_error=False):
         super(Elastic, self).__init__()
         url_parts = url.split(':')
         self.host = url_parts[0]
@@ -44,9 +44,9 @@ class Elastic(object):
 
         if connection is None:
             if self.connection_type == 'http':
-                self.connection = HttpConnection(self.host, self.port, timeout=self.timeout)
+                self.connection = HttpConnection(self.host, self.port, timeout=self.timeout, except_on_error=except_on_error)
             else:
-                self.connection = ThriftConnection(self.host, self.port, timeout=self.timeout)
+                self.connection = ThriftConnection(self.host, self.port, timeout=self.timeout, except_on_error=except_on_error)
         else:
             self.connection = connection
 

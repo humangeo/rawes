@@ -1,6 +1,14 @@
 History
 =========
 
+0.3.4 (2013-1-7)
+----------------
+* Added 'except_on_error' boolean option to rawes.Elastic constructor.  If set to True, rawes.Elastic will throw an exception when elasticsearch returns a status code of >= 400 (i.e., when there is an error)
+
+0.3.3 (2012-12-21)
+------------------
+* Restricted "requests" requirement from >=0.11.1 to '>=0.11.1, <1.0.0'
+
 0.3.2 (2012-12-11)
 ----------------
 * Thrift bug fix (Thanks [anathomical](https://github.com/anathomical)!)

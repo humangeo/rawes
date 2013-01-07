@@ -31,16 +31,18 @@ try:
 except ImportError:
     thrift_installed = False
 
+from elastic_exception import ElasticException
 
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
-    def __init__(self, host, port, timeout=None):
+    def __init__(self, host, port, timeout=None, except_on_error=False):
         if not thrift_installed:
             raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
         self.protocol = 'thrift'
         self.host = host
         self.port = port
         self.url = '%s://%s:%s' % (self.protocol, self.host, self.port)
+        self.except_on_error = except_on_error
         tsocket = TSocket.TSocket(self.host, self.port)
         if timeout is not None:
             tsocket.setTimeout(timeout * 1000)
@@ -77,8 +79,12 @@ class ThriftConnection(object):
 
     def _decode(self, response):
         if (response.body == ''):
-            return response.status < 300
-        return json.loads(response.body)
+            decoded = response.status < 300
+        else:
+            decoded = json.loads(response.body)
+        if (self.except_on_error and response.status >=400):
+            raise(ElasticException(message="ElasticSearch Error: %r" % response.body, result=decoded, status_code=response.status))
+        return decoded
 
     def _dict_to_map_str_str(self, d):
         """
