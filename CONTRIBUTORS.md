@@ -7,3 +7,4 @@ rawes is made possible by contributions from:
 * Patrick Ancillotti [@nawty](https://twitter.com/nawty)
 * Rich Atkinson [github.com/atkinson](https://github.com/atkinson)
 * Anathomical [github.com/anathomical](https://github.com/anathomical)
+* Danny Holloway [@holloway_danny](https://twitter.com/holloway_danny)

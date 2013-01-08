@@ -1,6 +1,10 @@
 History
 =========
 
+0.3.5 (2013-1-8)
+----------------
+* Timeout bug fix for HTTP and Thrift
+
 0.3.4 (2013-1-7)
 ----------------
 * Added 'except_on_error' boolean option to rawes.Elastic constructor.  If set to True, rawes.Elastic will throw an exception when elasticsearch returns a status code of >= 400 (i.e., when there is an error)
