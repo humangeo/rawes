@@ -31,7 +31,7 @@ class Elastic(object):
         self.host = url_parts[0]
         self.port = int(url_parts[1]) if len(url_parts) == 2 else 9200
         self.url = '%s:%s' % (self.host, self.port)
-        self.timeout = None if timeout is None else timeout * 1000
+        self.timeout = timeout # seconds
         self.path = path
 
         if connection_type is None:

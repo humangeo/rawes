@@ -29,7 +29,7 @@ class HttpConnection(object):
         self.protocol = 'http'
         self.host = host
         self.port = port
-        self.session = requests.session(timeout=timeout)
+        self.session = requests.session(timeout=timeout) # requests expects seconds
         self.url = '%s://%s:%s' % (self.protocol, self.host, self.port)
         self.except_on_error = except_on_error
 

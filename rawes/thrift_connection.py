@@ -45,7 +45,7 @@ class ThriftConnection(object):
         self.except_on_error = except_on_error
         tsocket = TSocket.TSocket(self.host, self.port)
         if timeout is not None:
-            tsocket.setTimeout(timeout * 1000)
+            tsocket.setTimeout(timeout * 1000) # thrift expects ms
         transport = TTransport.TBufferedTransport(tsocket)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         self.client = Rest.Client(protocol)
