@@ -29,11 +29,15 @@ class HttpConnection(object):
         self.protocol = 'http'
         self.host = host
         self.port = port
-        self.session = requests.session(timeout=timeout) # requests expects seconds
+        self.timeout = timeout
+        #self.session = requests.session(timeout=timeout) # requests expects seconds
+        self.session = requests.session() # requests expects seconds
         self.url = '%s://%s:%s' % (self.protocol, self.host, self.port)
         self.except_on_error = except_on_error
 
     def request(self, method, path, **kwargs):
+        if 'timeout' not in kwargs:
+            kwargs['timeout'] = self.timeout
         response = self.session.request(method, '%s/%s' % (self.url, path), **kwargs)
         return self._decode(response)
 

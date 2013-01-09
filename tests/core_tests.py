@@ -42,12 +42,11 @@ class TestElasticCore(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
-        self.es_http = rawes.Elastic(url=http_url)
-        self.es_http_except_on_error = rawes.Elastic(url=http_url,except_on_error=True)
-        thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
-        self.es_thrift = rawes.Elastic(url=thrift_url)
-        self.es_thrift_except_on_error = rawes.Elastic(url=thrift_url,except_on_error=True)
+        self.http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
+        self.es_http = rawes.Elastic(url=self.http_url)
+        self.thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
+        self.es_thrift = rawes.Elastic(url=self.thrift_url)
+        
 
     def test_http(self):
         self._reset_indices(self.es_http)
@@ -57,7 +56,6 @@ class TestElasticCore(unittest.TestCase):
         self._test_bulk_load(self.es_http)
         self._test_datetime_encoder(self.es_http)
         self._test_custom_encoder(self.es_http)
-        self._test_except_on_error(self.es_http, self.es_http_except_on_error)
 
     def test_thrift(self):
         self._reset_indices(self.es_thrift)
@@ -67,7 +65,19 @@ class TestElasticCore(unittest.TestCase):
         self._test_bulk_load(self.es_thrift)
         self._test_datetime_encoder(self.es_thrift)
         self._test_custom_encoder(self.es_thrift)
-        self._test_except_on_error(self.es_thrift, self.es_thrift_except_on_error)
+        
+
+    def test_except_on_error(self):
+        es_http_except_on_error = rawes.Elastic(url=self.http_url,except_on_error=True)
+        es_thrift_except_on_error = rawes.Elastic(url=self.thrift_url,except_on_error=True)
+        self._test_except_on_error(self.es_http, es_http_except_on_error)
+        self._test_except_on_error(self.es_thrift, es_thrift_except_on_error)
+
+    def test_timeouts(self):
+        es_http_short_timeout = rawes.Elastic(url=self.http_url,timeout=0.0001)
+        es_thrift_short_timeout = rawes.Elastic(url=self.thrift_url,timeout=0.0001)
+        self._test_timeout(es_short_timeout=es_http_short_timeout)
+        self._test_timeout(es_short_timeout=es_thrift_short_timeout)
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
@@ -319,5 +329,13 @@ class TestElasticCore(unittest.TestCase):
             self.assertEquals(status_code,404)
             exception_thrown = True        
         self.assertTrue(exception_thrown)
+
+    def _test_timeout(self,es_short_timeout):
+        timed_out = False
+        try:
+            result = es_short_timeout.get("/_mapping")
+        except Exception as e:
+            timed_out = str(e.message).find('timed out') > -1
+        self.assertTrue(timed_out)
 
 

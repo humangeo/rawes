@@ -1,6 +1,10 @@
 History
 =========
 
+0.3.6 (2013-1-8)
+----------------
+* Fixed requests >1.0 incompatibilities, changed requirement back to 'requests>=0.11.1'
+
 0.3.5 (2013-1-8)
 ----------------
 * Timeout bug fix for HTTP and Thrift
