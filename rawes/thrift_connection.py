@@ -38,6 +38,8 @@ class ThriftConnection(object):
     def __init__(self, url, timeout=None, except_on_error=False):
         if not thrift_installed:
             raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
+        if not url.port:
+            raise ValueError('Thrift connections require an explicit port number.')
         self.protocol = 'thrift'
         self.host = url.hostname
         self.port = url.port
