@@ -19,17 +19,12 @@ try:
 except ImportError:
     import json  # noqa
 
-try:
-    from thrift import Thrift
-    from thrift.transport import TSocket
-    from thrift.transport import TTransport
-    from thrift.protocol import TBinaryProtocol
+from thrift.transport import TSocket
+from thrift.transport import TTransport
+from thrift.protocol import TBinaryProtocol
 
-    from rawes.thrift_elasticsearch import Rest
-    from rawes.thrift_elasticsearch.ttypes import Method, RestRequest
-    thrift_installed = True
-except ImportError:
-    thrift_installed = False
+from rawes.thrift_elasticsearch import Rest
+from rawes.thrift_elasticsearch.ttypes import Method, RestRequest
 
 from elastic_exception import ElasticException
 
@@ -37,8 +32,6 @@ from elastic_exception import ElasticException
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
     def __init__(self, url, timeout=None, except_on_error=False):
-        if not thrift_installed:
-            raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
         if not url.port:
             raise ValueError('Thrift connections require an explicit port number.')
         self.protocol = 'thrift'
@@ -59,7 +52,7 @@ class ThriftConnection(object):
         'put': Method.PUT,
         'delete': Method.DELETE,
         'head': Method.HEAD
-    } if thrift_installed else {}
+    }
 
     def request(self, method, path, **kwargs):
         thriftargs = {}

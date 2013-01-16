@@ -20,7 +20,6 @@ try:
 except ImportError:
     import json  # noqa
 
-from thrift_connection import ThriftConnection
 from http_connection import HttpConnection
 from rawes.encoders import encode_date_optional_time
 
@@ -64,6 +63,10 @@ class Elastic(object):
             if scheme == 'http':
                 connection = HttpConnection(url, timeout=self.timeout, except_on_error=except_on_error)
             else:
+                try:
+                    from thrift_connection import ThriftConnection
+                except ImportError:
+                    raise ImportError("The 'thrift' python package does not seem to be installed.")
                 connection = ThriftConnection(url, timeout=self.timeout, except_on_error=except_on_error)
 
         self.connection = connection
