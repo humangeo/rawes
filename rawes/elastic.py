@@ -18,7 +18,7 @@ from urlparse import urlsplit, SplitResult
 try:
     import simplejson as json
 except ImportError:
-    import json
+    import json  # noqa
 
 from thrift_connection import ThriftConnection
 from http_connection import HttpConnection

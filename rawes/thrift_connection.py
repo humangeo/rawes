@@ -17,7 +17,7 @@
 try:
     import simplejson as json
 except ImportError:
-    import json
+    import json  # noqa
 
 try:
     from thrift import Thrift
@@ -33,6 +33,7 @@ except ImportError:
 
 from elastic_exception import ElasticException
 
+
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
     def __init__(self, url, timeout=None, except_on_error=False):
@@ -46,18 +47,18 @@ class ThriftConnection(object):
         self.except_on_error = except_on_error
         tsocket = TSocket.TSocket(self.host, self.port)
         if timeout is not None:
-            tsocket.setTimeout(timeout * 1000) # thrift expects ms
+            tsocket.setTimeout(timeout * 1000)  # thrift expects ms
         transport = TTransport.TBufferedTransport(tsocket)
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         self.client = Rest.Client(protocol)
         transport.open()
 
     method_mappings = {
-        'get' : Method.GET,
-        'post' : Method.POST,
-        'put' : Method.PUT,
-        'delete' : Method.DELETE,
-        'head' : Method.HEAD
+        'get': Method.GET,
+        'post': Method.POST,
+        'put': Method.PUT,
+        'delete': Method.DELETE,
+        'head': Method.HEAD
     } if thrift_installed else {}
 
     def request(self, method, path, **kwargs):
@@ -79,12 +80,13 @@ class ThriftConnection(object):
         return self._decode(response)
 
     def _decode(self, response):
-        if (response.body == ''):
+        if not response.body:
             decoded = response.status < 300
         else:
             decoded = json.loads(response.body)
-        if (self.except_on_error and response.status >=400):
-            raise(ElasticException(message="ElasticSearch Error: %r" % response.body, result=decoded, status_code=response.status))
+        if self.except_on_error and response.status >= 400:
+            raise ElasticException(message="ElasticSearch Error: %r" % response.body,
+                                   result=decoded, status_code=response.status)
         return decoded
 
     def _dict_to_map_str_str(self, d):

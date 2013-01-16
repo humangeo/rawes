@@ -17,7 +17,7 @@
 try:
     import simplejson as json
 except ImportError:
-    import json
+    import json  # noqa
 
 import requests
 from elastic_exception import ElasticException
@@ -40,10 +40,12 @@ class HttpConnection(object):
         return self._decode(response)
 
     def _decode(self, response):
-        if (response.text == ''):
+        if not response.text:
             decoded = response.status_code < 300
         else:
             decoded = json.loads(response.text)
-        if (self.except_on_error and response.status_code >=400):
-            raise(ElasticException(message="ElasticSearch Error: %r" % response.text, result=decoded, status_code=response.status_code))
+
+        if self.except_on_error and response.status_code >= 400:
+            raise ElasticException(message="ElasticSearch Error: %r" % response.text,
+                                   result=decoded, status_code=response.status_code)
         return decoded
