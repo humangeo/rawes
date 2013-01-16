@@ -24,7 +24,7 @@ from elastic_exception import ElasticException
 
 
 class HttpConnection(object):
-    """docstring for HttpConnection"""
+    """Connects to elasticsearch over HTTP"""
     def __init__(self, url, timeout=None, except_on_error=False):
         super(HttpConnection, self).__init__()
         self.protocol = 'http'
