@@ -8,3 +8,4 @@ rawes is made possible by contributions from:
 * Rich Atkinson [github.com/atkinson](https://github.com/atkinson)
 * Anathomical [github.com/anathomical](https://github.com/anathomical)
 * Danny Holloway [@holloway_danny](https://twitter.com/holloway_danny)
+* Vincent Driessen [@nvie](https://github.com/nvie) [github.com/nvie](https://github.com/nvie)

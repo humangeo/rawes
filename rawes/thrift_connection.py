@@ -35,13 +35,12 @@ from elastic_exception import ElasticException
 
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
-    def __init__(self, host, port, timeout=None, except_on_error=False):
+    def __init__(self, url, timeout=None, except_on_error=False):
         if not thrift_installed:
             raise(Exception("The 'thrift' Python module does not appear to be installed.  Please install it before creating a ThriftConnection"))
         self.protocol = 'thrift'
-        self.host = host
-        self.port = port
-        self.url = '%s://%s:%s' % (self.protocol, self.host, self.port)
+        self.host = url.hostname
+        self.port = url.port
         self.except_on_error = except_on_error
         tsocket = TSocket.TSocket(self.host, self.port)
         if timeout is not None:

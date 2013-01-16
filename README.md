@@ -38,16 +38,16 @@ The rawes.Elastic constructor takes the following parameters (defaults shown):
 ```python
 rawes.Elastic(
     url='localhost:9200', # Path and port to elasticsearch service.  Ports 9500-9600 will use thrift; others http
-    path='', # http url path (for example, 'tweets/tweet/_search')
+                          # Use 'http://localhost:9200' to enforce http
+                          # Use 'thrift://localhost:9500' to enforce thrift
+                          # Use 'http://localhost:9200/tweets/tweet' to specify the path immediately
     timeout=30, # Timeout in seconds
-    connection_type=None, # Set to 'http' or 'thrift' to explicitly set a protocol
 )
 ```
 
 An instance of rawes.Elastic ('es' in this case) has methods for get, post, put, delete, and head (for each http verb).  Each method takes the following parameters (defaults shown):
 ```python
 es.get(
-    path='', # HTTP URL path
     data='', # http body.  can be either a string or a python dictionary (will automatically be converted to JSON)
     params={}, # HTTP URL params passed as a python dictionary
     headers={}, # HTTP headers as a python dictionary
@@ -268,10 +268,10 @@ import rawes
 es_thrift = rawes.Elastic('localhost:9500')
 ```
 
-If you are using thrift on a non standard port, specify connection_type='thrift' as a parameter
+If you are using thrift on a non standard port, specify a 'thrift://' url
 ```python
 import rawes
-es_thrift = rawes.Elastic('localhost:8500', connection_type='thrift')
+es_thrift = rawes.Elastic('thrift://localhost:8500')
 ```
 
 Run Unit Tests

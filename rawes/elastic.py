@@ -14,6 +14,7 @@
 #   limitations under the License.
 #
 
+from urlparse import urlsplit, SplitResult
 try:
     import simplejson as json
 except ImportError:
@@ -23,32 +24,49 @@ from thrift_connection import ThriftConnection
 from http_connection import HttpConnection
 from rawes.encoders import encode_date_optional_time
 
+
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', path='', timeout=30, connection_type=None, connection=None, except_on_error=False):
+    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, except_on_error=False):
         super(Elastic, self).__init__()
-        url_parts = url.split(':')
-        self.host = url_parts[0]
-        self.port = int(url_parts[1]) if len(url_parts) == 2 else 9200
-        self.url = '%s:%s' % (self.host, self.port)
-        self.timeout = timeout # seconds
-        self.path = path
 
-        if connection_type is None:
-            if self.port >= 9500 and self.port <= 9600:
-                self.connection_type = 'thrift'
+        if '//' not in url:
+            # Make sure urlsplit() doesn't choke on scheme-less URLs, like 'localhost:9200'
+            url = '//' + url
+
+        url = urlsplit(url)
+        if not url.netloc:
+            raise ValueError('Could not parse the given URL.')
+
+        # Sanitize the URL:
+        # - query, fragment aren't allowed;
+        # - path is used if explicitly provided;
+        # - scheme is optional (will be derived from port number, if possible)
+        scheme = url.scheme
+
+        # If the scheme isn't explicitly provided by now, try to deduce it
+        # from the port number
+        if not scheme:
+            if 9500 <= url.port <= 9600:
+                scheme = 'thrift'
             else:
-                self.connection_type = 'http'
-        else:
-            self.connection_type = connection_type
+                scheme = 'http'
+
+        if not path:
+            path = url.path
+
+        url = SplitResult(scheme=scheme, netloc=url.netloc, path=path, query='', fragment='')
+
+        self.url = url
+        self.timeout = timeout  # seconds
 
         if connection is None:
-            if self.connection_type == 'http':
-                self.connection = HttpConnection(self.host, self.port, timeout=self.timeout, except_on_error=except_on_error)
+            if scheme == 'http':
+                connection = HttpConnection(url, timeout=self.timeout, except_on_error=except_on_error)
             else:
-                self.connection = ThriftConnection(self.host, self.port, timeout=self.timeout, except_on_error=except_on_error)
-        else:
-            self.connection = connection
+                connection = ThriftConnection(url, timeout=self.timeout, except_on_error=except_on_error)
+
+        self.connection = connection
 
     def put(self, path='', **kwargs):
         return self.request('put', path, **kwargs)
@@ -66,7 +84,7 @@ class Elastic(object):
         return self.request('head', path, **kwargs)
 
     def request(self, method, path, **kwargs):
-        new_path = self._build_path(self.path, path)
+        new_path = self._build_path(self.url.path, path)
 
         # Look for a custom json encoder
         if 'json_encoder' in kwargs:
@@ -85,14 +103,13 @@ class Elastic(object):
         return self.__getitem__(path_item)
 
     def __getitem__(self, path_item):
-        new_path = self._build_path(self.path, path_item)
+        new_path = self._build_path(self.url.path, path_item)
         return Elastic(
-            url=self.url,
+            url=self.url.geturl(),
             timeout=self.timeout,
-            connection_type=self.connection_type,
             path=new_path,
             connection=self.connection
         )
 
     def _build_path(self, base_path, path_item):
-        return '%s/%s' % (base_path, path_item) if base_path != '' else path_item
+        return '/'.join([base_path, path_item]) if base_path else path_item
