@@ -9,6 +9,7 @@ Features
 --------
 * elasticsearch native API support
 * gzip over HTTP support
+* HTTPS support
 * Thrift support
 
 Installation
