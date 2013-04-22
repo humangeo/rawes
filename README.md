@@ -37,21 +37,36 @@ es.get('tweets/tweet/_search', data={
 The rawes.Elastic constructor takes the following parameters (defaults shown):
 ```python
 rawes.Elastic(
-    url='localhost:9200', # Path and port to elasticsearch service.  Ports 9500-9600 will use thrift; others http
-                          # Use 'http://localhost:9200' to enforce http
-                          # Use 'thrift://localhost:9500' to enforce thrift
-                          # Use 'http://localhost:9200/tweets/tweet' to specify the path immediately
-    timeout=30, # Timeout in seconds
+    url='http://localhost:9200',    # Protocol, host, and port of elasticsearch service. 
+                                    # Valid protocols: http, https, thrift
+                                    # Default protocol is http, unless port is in range 9500-9600, then thrift
+                                    # Default ports: http=9200, https=443, thrift=9500
+    timeout=30,                     # Timeout in seconds,
+    **kwrgs                         # http(s) only: additional parameters you wish to pass 
+                                    # to the python 'requests' library (for example, basic auth)
 )
+```
+
+Constructor examples:
+
+```python
+es = rawes.Elastic()                        # will connect to: http://localhost:9200
+es = rawes.Elastic('localhost')             # will connect to: http://localhost:9200
+es = rawes.Elastic('http://localhost')      # will connect to: http://localhost:9200
+es = rawes.Elastic('https://localhost')     # will connect to: https://localhost:443
+es = rawes.Elastic('thrift://localhost')    # will connect to: thrift://localhost:9500
+es = rawes.Elastic('https://example.org:8443', auth=('user','pass'))  # https with basic auth connection to: https://example.org:8443
 ```
 
 An instance of rawes.Elastic ('es' in this case) has methods for get, post, put, delete, and head (for each http verb).  Each method takes the following parameters (defaults shown):
 ```python
 es.get(
-    data='', # http body.  can be either a string or a python dictionary (will automatically be converted to JSON)
-    params={}, # HTTP URL params passed as a python dictionary
-    headers={}, # HTTP headers as a python dictionary
-    **kwargs # HTTP only: any additional parameters you wish to pass to the python 'requests' library (for example, basic auth)
+    path='',    # http URL path
+    data='',    # http body.  can be either a string or a python dictionary (will automatically be converted to JSON)
+    params={},  # http URL params passed as a python dictionary
+    headers={}, # http headers as a python dictionary
+    **kwargs    # additional parameters you wish to pass to the python 'requests' library or the thrift RestRequest
+                # Examples: headers, basic auth
 )
 ```
 

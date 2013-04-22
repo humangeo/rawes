@@ -79,6 +79,18 @@ class TestElasticCore(unittest.TestCase):
         self._test_timeout(es_short_timeout=es_http_short_timeout)
         self._test_timeout(es_short_timeout=es_thrift_short_timeout)
 
+
+    def test_empty_constructor(self):
+        es = rawes.Elastic()
+        self.assertEquals(es.url.scheme, "http")
+        self.assertEquals(es.url.hostname, "localhost")
+        self.assertEquals(es.url.port, 9200)
+    
+    def test_https(self):
+        es = rawes.Elastic("https://localhost")
+        self.assertEquals(es.url.scheme, "https")
+        self.assertEquals(es.url.port, 443)
+
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
         index_status_result = es.get('%s/_status' % config.ES_INDEX)

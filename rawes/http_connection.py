@@ -25,18 +25,21 @@ from elastic_exception import ElasticException
 
 class HttpConnection(object):
     """Connects to elasticsearch over HTTP"""
-    def __init__(self, url, timeout=None, except_on_error=False):
+    def __init__(self, url, timeout=None, except_on_error=False, **kwargs):
         super(HttpConnection, self).__init__()
         self.protocol = 'http'
-        self.url = url.geturl()
+        self.url = url
         self.timeout = timeout
+        self.kwargs = kwargs
         self.session = requests.session()
         self.except_on_error = except_on_error
-
+        
     def request(self, method, path, **kwargs):
-        if 'timeout' not in kwargs:
-            kwargs['timeout'] = self.timeout
-        response = self.session.request(method, '/'.join([self.url, path]), **kwargs)
+        args = self.kwargs.copy()
+        args.update(kwargs)
+        if 'timeout' not in args:
+            args['timeout'] = self.timeout
+        response = self.session.request(method, '%s/%s' % (self.url, path), **args)
         return self._decode(response)
 
     def _decode(self, response):

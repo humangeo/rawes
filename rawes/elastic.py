@@ -13,8 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-
-from urlparse import urlsplit, SplitResult
+import urlparse
 try:
     import simplejson as json
 except ImportError:
@@ -26,48 +25,21 @@ from rawes.encoders import encode_date_optional_time
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, except_on_error=False):
+    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, except_on_error=False, **kwargs):
         super(Elastic, self).__init__()
 
-        if '//' not in url:
-            # Make sure urlsplit() doesn't choke on scheme-less URLs, like 'localhost:9200'
-            url = '//' + url
-
-        url = urlsplit(url)
-        if not url.netloc:
-            raise ValueError('Could not parse the given URL.')
-
-        # Sanitize the URL:
-        # - query, fragment aren't allowed;
-        # - path is used if explicitly provided;
-        # - scheme is optional (will be derived from port number, if possible)
-        scheme = url.scheme
-
-        # If the scheme isn't explicitly provided by now, try to deduce it
-        # from the port number
-        if not scheme:
-            if 9500 <= url.port <= 9600:
-                scheme = 'thrift'
-            else:
-                scheme = 'http'
-
-        if not path:
-            path = url.path
-
-        url = SplitResult(scheme=scheme, netloc=url.netloc, path=path, query='', fragment='')
-
-        self.url = url
+        self.url = self._decode_url(url,path)
         self.timeout = timeout  # seconds
 
         if connection is None:
-            if scheme == 'http':
-                connection = HttpConnection(url, timeout=self.timeout, except_on_error=except_on_error)
+            if self.url.scheme == 'http' or self.url.scheme == 'https':
+                connection = HttpConnection(self.url.geturl(), timeout=self.timeout, except_on_error=except_on_error, **kwargs)
             else:
                 try:
                     from thrift_connection import ThriftConnection
                 except ImportError:
                     raise ImportError("The 'thrift' python package does not seem to be installed.")
-                connection = ThriftConnection(url, timeout=self.timeout, except_on_error=except_on_error)
+                connection = ThriftConnection(self.url.hostname, self.url.port, timeout=self.timeout, except_on_error=except_on_error, **kwargs)
 
         self.connection = connection
 
@@ -115,4 +87,40 @@ class Elastic(object):
         )
 
     def _build_path(self, base_path, path_item):
-        return '/'.join([base_path, path_item]) if base_path else path_item
+        return '%s/%s' % (base_path, path_item) if base_path != '' else path_item
+
+    def _decode_url(self, url, path):
+        # Make sure urlsplit() doesn't choke on scheme-less URLs, like 'localhost:9200'
+        if '//' not in url:
+            url = '//' + url
+
+        url = urlparse.urlsplit(url)
+        if not url.netloc:
+            raise ValueError('Could not parse the given URL.')
+
+        # If the scheme isn't explicitly provided by now, try to deduce it
+        # from the port number
+        scheme = url.scheme
+        if not scheme:
+            if 9500 <= url.port <= 9600:
+                scheme = 'thrift'
+            else:
+                scheme = 'http'
+
+        # Use path if provided
+        if not path:
+            path = url.path
+
+        # Set default ports
+        netloc = url.netloc
+        if not url.port:
+            if url.scheme == 'http':
+                netloc = "%s:%s" % (netloc,9200)
+            elif url.scheme == 'https':
+                netloc = "%s:%s" % (netloc,443)
+            elif url.scheme == 'thrift':
+                netloc = "%s:%s" % (netloc,9500)
+
+        # Return new url. 
+        return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path, query='', fragment='')
+

@@ -31,12 +31,10 @@ from elastic_exception import ElasticException
 
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
-    def __init__(self, url, timeout=None, except_on_error=False):
-        if not url.port:
-            raise ValueError('Thrift connections require an explicit port number.')
+    def __init__(self, host, port, timeout=None, except_on_error=False, **kwargs):
         self.protocol = 'thrift'
-        self.host = url.hostname
-        self.port = url.port
+        self.host = host
+        self.port = port
         self.except_on_error = except_on_error
         tsocket = TSocket.TSocket(self.host, self.port)
         if timeout is not None:
@@ -45,6 +43,7 @@ class ThriftConnection(object):
         protocol = TBinaryProtocol.TBinaryProtocol(transport)
         self.client = Rest.Client(protocol)
         transport.open()
+        self.kwargs = kwargs
 
     method_mappings = {
         'get': Method.GET,
@@ -55,16 +54,18 @@ class ThriftConnection(object):
     }
 
     def request(self, method, path, **kwargs):
+        newkwargs = self.kwargs.copy()
+        newkwargs.update(kwargs)
         thriftargs = {}
 
-        if 'data' in kwargs:
-            thriftargs['body'] = kwargs['data']
+        if 'data' in newkwargs:
+            thriftargs['body'] = newkwargs['data']
 
-        if 'params' in kwargs:
-            thriftargs['parameters'] = self._dict_to_map_str_str(kwargs['params'])
+        if 'params' in newkwargs:
+            thriftargs['parameters'] = self._dict_to_map_str_str(newkwargs['params'])
 
-        if 'headers' in kwargs:
-            thriftargs['headers'] = self._dict_to_map_str_str(kwargs['headers'])
+        if 'headers' in newkwargs:
+            thriftargs['headers'] = self._dict_to_map_str_str(newkwargs['headers'])
 
         mapped_method = ThriftConnection.method_mappings[method]
         request = RestRequest(method=mapped_method, uri=path, **thriftargs)

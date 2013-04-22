@@ -1,6 +1,11 @@
 History
 =========
 
+0.4.0 (2013-4-21)
+----------------
+* Simplified Elastic constructor by removing connection_type param and incorporating in to url (Thanks [nvie](https://github.com/nvie)!)
+* Added optional **kwargs to Elastic constructor.  Useful for specifying things like basic authentication or specific headers
+
 0.3.6 (2013-1-8)
 ----------------
 * Fixed requests >1.0 incompatibilities, changed requirement back to 'requests>=0.11.1'
