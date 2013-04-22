@@ -52,8 +52,6 @@ Constructor examples:
 
 ```python
 es = rawes.Elastic()                        # will connect to: http://localhost:9200
-es = rawes.Elastic('localhost')             # will connect to: http://localhost:9200
-es = rawes.Elastic('http://localhost')      # will connect to: http://localhost:9200
 es = rawes.Elastic('https://localhost')     # will connect to: https://localhost:443
 es = rawes.Elastic('thrift://localhost')    # will connect to: thrift://localhost:9500
 es = rawes.Elastic('https://example.org:8443', auth=('user','pass'))  # https with basic auth connection to: https://example.org:8443
