@@ -1,6 +1,10 @@
 History
 =========
 
+0.5.0 (2013-4-25)
+----------------
+* rawes now throws a rawes.elastic_exception.ElasticException on http status codes of >=400 by default.  Removed rawes.Elastic "except_on_error" argument.
+
 0.4.0 (2013-4-21)
 ----------------
 * Simplified Elastic constructor by removing connection_type param and incorporating in to url (Thanks [nvie](https://github.com/nvie)!)

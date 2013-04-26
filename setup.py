@@ -37,7 +37,7 @@ classifiers = [
 ]
 
 setup(name='rawes',
-      version='0.4.0',
+      version='0.5.0',
       description='rawes elasticsearch driver',
       long_description="\n" + README + "\n\n" + CHANGES,
       author='Dan Noble',

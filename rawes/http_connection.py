@@ -25,14 +25,13 @@ from elastic_exception import ElasticException
 
 class HttpConnection(object):
     """Connects to elasticsearch over HTTP"""
-    def __init__(self, url, timeout=None, except_on_error=False, **kwargs):
+    def __init__(self, url, timeout=None, **kwargs):
         super(HttpConnection, self).__init__()
         self.protocol = 'http'
         self.url = url
         self.timeout = timeout
         self.kwargs = kwargs
         self.session = requests.session()
-        self.except_on_error = except_on_error
         
     def request(self, method, path, **kwargs):
         args = self.kwargs.copy()
@@ -51,7 +50,7 @@ class HttpConnection(object):
             except ValueError as e: 
                 decoded = False
 
-        if self.except_on_error and response.status_code >= 400:
+        if response.status_code >= 400:
             raise ElasticException(message="ElasticSearch Error: %r" % response.text,
                                    result=decoded, status_code=response.status_code)
         return decoded

@@ -22,10 +22,9 @@ except ImportError:
 from http_connection import HttpConnection
 from rawes.encoders import encode_date_optional_time
 
-
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, except_on_error=False, **kwargs):
+    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, **kwargs):
         super(Elastic, self).__init__()
 
         self.url = self._decode_url(url,path)
@@ -33,13 +32,13 @@ class Elastic(object):
 
         if connection is None:
             if self.url.scheme == 'http' or self.url.scheme == 'https':
-                connection = HttpConnection(self.url.geturl(), timeout=self.timeout, except_on_error=except_on_error, **kwargs)
+                connection = HttpConnection(self.url.geturl(), timeout=self.timeout, **kwargs)
             else:
                 try:
                     from thrift_connection import ThriftConnection
                 except ImportError:
                     raise ImportError("The 'thrift' python package does not seem to be installed.")
-                connection = ThriftConnection(self.url.hostname, self.url.port, timeout=self.timeout, except_on_error=except_on_error, **kwargs)
+                connection = ThriftConnection(self.url.hostname, self.url.port, timeout=self.timeout, **kwargs)
 
         self.connection = connection
 

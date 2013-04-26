@@ -27,7 +27,7 @@ import json
 from datetime import datetime
 from dateutil import tz
 import time
-
+from rawes.elastic_exception import ElasticException
 
 import logging
 log_level = logging.ERROR
@@ -68,13 +68,6 @@ class TestElasticCore(unittest.TestCase):
         self._test_datetime_encoder(self.es_thrift)
         self._test_custom_encoder(self.es_thrift)
         self._test_no_handler_found_for_uri(self.es_thrift)
-        
-
-    def test_except_on_error(self):
-        es_http_except_on_error = rawes.Elastic(url=self.http_url,except_on_error=True)
-        es_thrift_except_on_error = rawes.Elastic(url=self.thrift_url,except_on_error=True)
-        self._test_except_on_error(self.es_http, es_http_except_on_error)
-        self._test_except_on_error(self.es_thrift, es_thrift_except_on_error)
 
     def test_timeouts(self):
         es_http_short_timeout = rawes.Elastic(url=self.http_url,timeout=0.0001)
@@ -96,14 +89,18 @@ class TestElasticCore(unittest.TestCase):
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
-        index_status_result = es.get('%s/_status' % config.ES_INDEX)
-        if 'status' in index_status_result and index_status_result['status'] == 404:
+        try:
+            index_status_result = es.get('%s/_status' % config.ES_INDEX)
+        except ElasticException: 
             create_index_result = es.put(config.ES_INDEX)
 
         # Test deleting the index
         delete_index_result = es.delete(config.ES_INDEX)
-        index_deleted = es.get('%s/_status' % config.ES_INDEX)['status'] == 404
-        self.assertTrue(index_deleted)
+        try:
+            es.get('%s/_status' % config.ES_INDEX)['status']
+            self.assertTrue(False)
+        except ElasticException as e:
+            self.assertTrue(e.status_code == 404)
 
         # Now remake the index
         es.put(config.ES_INDEX)
@@ -153,8 +150,11 @@ class TestElasticCore(unittest.TestCase):
     def _test_document_update(self, es):
         # Ensure the document does not already exist (using alternate syntax)
         self._wait_for_good_health(es)
-        search_result = es[config.ES_INDEX].sometype['123'].get()
-        self.assertFalse(search_result['exists'])
+        try:
+            search_result = es[config.ES_INDEX].sometype['123'].get()
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].sometype[123].put(data={
@@ -182,8 +182,11 @@ class TestElasticCore(unittest.TestCase):
 
     def _test_document_delete(self, es):
         # Ensure the document does not already exist (using alternate syntax)
-        search_result = es[config.ES_INDEX].persontype['555'].get()
-        self.assertFalse(search_result['exists'])
+        try:
+            search_result = es[config.ES_INDEX].persontype['555'].get()
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].persontype[555].put(data={
@@ -198,8 +201,11 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(delete_result['ok'])
 
         # Verify the document was deleted
-        search_result = es[config.ES_INDEX]['persontype']['555'].get()
-        self.assertFalse(search_result['exists'])
+        try:
+            search_result = es[config.ES_INDEX]['persontype']['555'].get()
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
     def _test_bulk_load(self, es):
         index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
@@ -241,12 +247,19 @@ class TestElasticCore(unittest.TestCase):
         # Ensure the document does not already exist
         test_type = 'datetimetesttype'
         test_id = 123
-        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
-        self.assertFalse(search_result['exists'])
+
+        try:
+            search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
         # Ensure no mapping exists for this type
-        mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
-        self.assertEquals(mapping['status'], 404)
+        try:
+            mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
         # Create a sample document with a datetime
         eastern_timezone = tz.gettz('America/New_York')
@@ -279,12 +292,18 @@ class TestElasticCore(unittest.TestCase):
         # Ensure the document does not already exist
         test_type = 'customdatetimetesttype'
         test_id = 456
-        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
-        self.assertFalse(search_result['exists'])
+        try:
+            search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
         # Ensure no mapping exists for this type
-        mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
-        self.assertEquals(mapping['status'], 404)
+        try:
+            mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,404)
 
         # Create a sample document with a datetime
         eastern_timezone = tz.gettz('America/New_York')
@@ -311,43 +330,6 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(search_result['exists'])
         self.assertEquals('2012-11-12',search_result['_source']['updated'])
 
-    def _test_except_on_error(self, es, es_except_on_error):
-        # Make a new document
-        # Create some sample documents
-        test_type = 'test_exceptions'
-        test_id = 56789
-        result = es.post('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
-            'data': 'test_errors'
-        }, params={
-            'refresh': True
-        })
-
-        # Get the document with the normal es instance
-        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
-        self.assertTrue(search_result['exists'])
-
-        # Now get the document with the es instance that throws exception on errors (No exception should be thrown)
-        search_result_2 = es_except_on_error.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
-        self.assertTrue(search_result_2['exists'])
-
-        # Try getting a document that doesn't exist from the normal es instance
-        fake_id = 124098124
-        search_result_3= es.get('%s/%s/%s' % (config.ES_INDEX, test_type, fake_id))
-        self.assertFalse(search_result_3['exists'])
-
-        # Now try getting a document that doesn't exist where we raise exceptions on error (this time an exception should be thrown)
-        fake_id = 124098124
-        exception_thrown = False
-        try:
-            search_result_4= es_except_on_error.get('%s/%s/%s' % (config.ES_INDEX, test_type, fake_id))   
-        except ElasticException as e:
-            result = e.result 
-            status_code = e.status_code
-            self.assertFalse(result['exists'])
-            self.assertEquals(status_code,404)
-            exception_thrown = True        
-        self.assertTrue(exception_thrown)
-
     def _test_timeout(self,es_short_timeout):
         timed_out = False
         try:
@@ -357,8 +339,11 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(timed_out)
 
     def _test_no_handler_found_for_uri(self,es):
-        result = es[config.ES_INDEX].nopedontexist.get()
-        self.assertFalse(result)
+        try:
+            es[config.ES_INDEX].nopedontexist.get()
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEquals(e.status_code,400)
 
     def _wait_for_good_health(self,es):
         # Give elasticsearch a few seconds to turn 'yellow' or 'green' after an operation

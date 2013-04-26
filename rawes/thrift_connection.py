@@ -31,11 +31,10 @@ from elastic_exception import ElasticException
 
 class ThriftConnection(object):
     """Connects to elasticsearch over thrift protocol"""
-    def __init__(self, host, port, timeout=None, except_on_error=False, **kwargs):
+    def __init__(self, host, port, timeout=None, **kwargs):
         self.protocol = 'thrift'
         self.host = host
         self.port = port
-        self.except_on_error = except_on_error
         tsocket = TSocket.TSocket(self.host, self.port)
         if timeout is not None:
             tsocket.setTimeout(timeout * 1000)  # thrift expects ms
@@ -82,7 +81,7 @@ class ThriftConnection(object):
             except ValueError:
                 decoded = False
 
-        if self.except_on_error and response.status >= 400:
+        if response.status >= 400:
             raise ElasticException(message="ElasticSearch Error: %r" % response.body,
                                    result=decoded, status_code=response.status)
         return decoded
