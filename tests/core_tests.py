@@ -57,6 +57,7 @@ class TestElasticCore(unittest.TestCase):
         self._test_bulk_load(self.es_http)
         self._test_datetime_encoder(self.es_http)
         self._test_custom_encoder(self.es_http)
+        self._test_no_handler_found_for_uri(self.es_http)
 
     def test_thrift(self):
         self._reset_indices(self.es_thrift)
@@ -66,6 +67,7 @@ class TestElasticCore(unittest.TestCase):
         self._test_bulk_load(self.es_thrift)
         self._test_datetime_encoder(self.es_thrift)
         self._test_custom_encoder(self.es_thrift)
+        self._test_no_handler_found_for_uri(self.es_thrift)
         
 
     def test_except_on_error(self):
@@ -353,6 +355,10 @@ class TestElasticCore(unittest.TestCase):
         except Exception as e:
             timed_out = str(e.message).find('timed out') > -1
         self.assertTrue(timed_out)
+
+    def _test_no_handler_found_for_uri(self,es):
+        result = es[config.ES_INDEX].nopedontexist.get()
+        self.assertFalse(result)
 
     def _wait_for_good_health(self,es):
         # Give elasticsearch a few seconds to turn 'yellow' or 'green' after an operation
