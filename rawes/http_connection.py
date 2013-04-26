@@ -46,7 +46,10 @@ class HttpConnection(object):
         if not response.text:
             decoded = response.status_code < 300
         else:
-            decoded = json.loads(response.text)
+            try:
+                decoded = json.loads(response.text)
+            except ValueError as e: 
+                decoded = False
 
         if self.except_on_error and response.status_code >= 400:
             raise ElasticException(message="ElasticSearch Error: %r" % response.text,

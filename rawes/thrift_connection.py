@@ -77,7 +77,11 @@ class ThriftConnection(object):
         if not response.body:
             decoded = response.status < 300
         else:
-            decoded = json.loads(response.body)
+            try:
+                decoded = json.loads(response.body)
+            except ValueError:
+                decoded = False
+
         if self.except_on_error and response.status >= 400:
             raise ElasticException(message="ElasticSearch Error: %r" % response.body,
                                    result=decoded, status_code=response.status)
