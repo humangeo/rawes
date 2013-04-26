@@ -26,6 +26,7 @@ import config
 import json
 from datetime import datetime
 from dateutil import tz
+import time
 
 
 import logging
@@ -149,6 +150,7 @@ class TestElasticCore(unittest.TestCase):
 
     def _test_document_update(self, es):
         # Ensure the document does not already exist (using alternate syntax)
+        self._wait_for_good_health(es)
         search_result = es[config.ES_INDEX].sometype['123'].get()
         self.assertFalse(search_result['exists'])
 
@@ -258,15 +260,17 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(refresh_result['ok'])
 
         # Verify the mapping was created properly
+        time.sleep(0.5) # Wait for the mapping to exist.  Probably a better way to do this
         mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+
         if test_type not in mapping:
-            raise(Exception('testy.... : %r' % mapping))
+            raise(Exception('type %s not in mapping: %r' % (test_type,mapping)))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
         self.assertEquals(mapping_date_format,'dateOptionalTime')
 
         # Verify the document was created and has the proper date
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
-        self.assertTrue(search_result['exists'])
+        self.assertTrue('exists' in search_result and search_result['exists'])
         self.assertEquals('2012-11-12T14:30:03Z',search_result['_source']['updated'])
 
     def _test_custom_encoder(self, es):
@@ -350,4 +354,16 @@ class TestElasticCore(unittest.TestCase):
             timed_out = str(e.message).find('timed out') > -1
         self.assertTrue(timed_out)
 
+    def _wait_for_good_health(self,es):
+        # Give elasticsearch a few seconds to turn 'yellow' or 'green' after an operation
+        # Try 6 times
+        interval = 0.25
+        good_health = False
+        for i in range(5):
+            health = es.get("_cluster/health")
+            if health["status"] == "green" or health["status"] == "yellow":
+                good_health = True
+                break
+            time.sleep(interval)
+        self.assertTrue(good_health)
 
