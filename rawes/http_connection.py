@@ -20,8 +20,7 @@ except ImportError:
     import json  # noqa
 
 import requests
-from elastic_exception import ElasticException
-
+from .elastic_exception import ElasticException
 
 class HttpConnection(object):
     """Connects to elasticsearch over HTTP"""
@@ -38,7 +37,7 @@ class HttpConnection(object):
         args.update(kwargs)
         if 'timeout' not in args:
             args['timeout'] = self.timeout
-        response = self.session.request(method, '%s/%s' % (self.url, path), **args)
+        response = self.session.request(method, "/".join((self.url, path)), **args)
         return self._decode(response)
 
     def _decode(self, response):
@@ -51,6 +50,6 @@ class HttpConnection(object):
                 decoded = False
 
         if response.status_code >= 400:
-            raise ElasticException(message="ElasticSearch Error: %r" % response.text,
+            raise ElasticException(message="ElasticSearch Error: {0}".format(response.text),
                                    result=decoded, status_code=response.status_code)
         return decoded

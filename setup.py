@@ -25,9 +25,12 @@ CHANGES = open(os.path.join(here, "CHANGES.md")).read()
 
 install_requires = [
     'requests>=0.11.1',
-    'thrift==0.8.0',
-    'python-dateutil>=1.0'
+    'pytz>=2012f'
 ]
+
+extras_requires = {
+    'thrift': ['thrift==0.8.0']
+}
 
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -39,7 +42,7 @@ classifiers = [
 setup(name='rawes',
       version='0.5.0',
       description='rawes elasticsearch driver',
-      long_description="\n" + README + "\n\n" + CHANGES,
+      long_description="\n{0}\n\n{1}".format(README, CHANGES),
       author='Dan Noble',
       author_email='@dwnoble',
       license='Apache-2.0',

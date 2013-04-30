@@ -14,4 +14,4 @@
 #   limitations under the License.
 #
 
-from elastic import Elastic
+from .elastic import Elastic

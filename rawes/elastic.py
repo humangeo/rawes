@@ -13,14 +13,20 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-import urlparse
+
 try:
     import simplejson as json
 except ImportError:
     import json  # noqa
 
-from http_connection import HttpConnection
-from rawes.encoders import encode_date_optional_time
+from .http_connection import HttpConnection
+from .encoders import encode_date_optional_time
+import sys
+
+if sys.version_info.major > 2:
+    import urllib.parse as urlparse
+else:
+    import urlparse
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
@@ -34,6 +40,9 @@ class Elastic(object):
             if self.url.scheme == 'http' or self.url.scheme == 'https':
                 connection = HttpConnection(self.url.geturl(), timeout=self.timeout, **kwargs)
             else:
+                if sys.version_info.major > 2:
+                    raise ValueError("Thrift transport not available for Python 3")
+
                 try:
                     from thrift_connection import ThriftConnection
                 except ImportError:
@@ -86,7 +95,7 @@ class Elastic(object):
         )
 
     def _build_path(self, base_path, path_item):
-        return '%s/%s' % (base_path, path_item) if base_path != '' else path_item
+        return '/'.join((base_path, path_item)) if base_path != '' else path_item
 
     def _decode_url(self, url, path):
         # Make sure urlsplit() doesn't choke on scheme-less URLs, like 'localhost:9200'
@@ -114,11 +123,11 @@ class Elastic(object):
         netloc = url.netloc
         if not url.port:
             if url.scheme == 'http':
-                netloc = "%s:%s" % (netloc,9200)
+                netloc = ":".join((netloc,9200))
             elif url.scheme == 'https':
-                netloc = "%s:%s" % (netloc,443)
+                netloc = ":".join((netloc,443))
             elif url.scheme == 'thrift':
-                netloc = "%s:%s" % (netloc,9500)
+                netloc = ":".join((netloc,9500))
 
         # Return new url. 
         return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path, query='', fragment='')

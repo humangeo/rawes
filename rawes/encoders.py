@@ -15,12 +15,12 @@
 #
 
 import datetime
-from dateutil import tz
+from pytz import timezone
 
 def encode_date_optional_time(obj):
     """
     ISO encode datetimes
     """
     if isinstance(obj, datetime.datetime):
-        return obj.astimezone(tz.tzutc()).strftime('%Y-%m-%dT%H:%M:%SZ')
-    raise TypeError(repr(obj) + " is not JSON serializable")
+        return obj.astimezone(timezone("UTC")).strftime('%Y-%m-%dT%H:%M:%SZ')
+    raise TypeError("{0} is not JSON serializable".format(repr(obj)))
