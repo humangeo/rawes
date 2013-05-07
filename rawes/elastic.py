@@ -95,7 +95,7 @@ class Elastic(object):
         )
 
     def _build_path(self, base_path, path_item):
-        return '/'.join((base_path, path_item)) if base_path != '' else path_item
+        return '/'.join((str(base_path), str(path_item))) if base_path != '' else str(path_item)
 
     def _decode_url(self, url, path):
         # Make sure urlsplit() doesn't choke on scheme-less URLs, like 'localhost:9200'
@@ -123,11 +123,11 @@ class Elastic(object):
         netloc = url.netloc
         if not url.port:
             if url.scheme == 'http':
-                netloc = ":".join((netloc,9200))
+                netloc = "{0}:{1}".format(netloc, 9200)
             elif url.scheme == 'https':
-                netloc = ":".join((netloc,443))
+                netloc = "{0}:{1}".format(netloc, 443)
             elif url.scheme == 'thrift':
-                netloc = ":".join((netloc,9500))
+                netloc = "{0}:{1}".format(netloc, 9500)
 
         # Return new url. 
         return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path, query='', fragment='')
