@@ -8,6 +8,7 @@ rawes is an elasticsearch driver for Python.  It provides a small level of abstr
 Features
 --------
 * elasticsearch native API support
+* Python 3 support
 * gzip over HTTP support
 * HTTPS support
 * Thrift support
@@ -260,7 +261,7 @@ except ElasticException as e:
 
 Thrift support
 --------------
-Before thrift will work with rawes, you must install the thrift python module
+Thrift is supported for Python 2.x versions.  Before thrift will work with rawes, you must install the thrift python module
 ```bash
 $ pip install thrift
 ```
