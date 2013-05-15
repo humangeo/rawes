@@ -202,7 +202,7 @@ JSON Encoding
 -------------
 
 By default, rawes will encode datetimes (timezone required!) to UTC ISO8601 strings with 'second' precision before handing the JSON off to elasticsearch.  If elasticsearch has no mapping defined, this will result in the default mapping of 'dateOptionalTime.'  
-Timezones are required for this automatic serialization: you may want to use a python module like python-dateutil or pytz to make your life easier.
+Timezones are required for this automatic serialization: you may want to use a python module like python-dateutil (Python 2.x only) or pytz to make your life easier.
 ```python
 from datetime import datetime
 from dateutil import tz

@@ -1,6 +1,11 @@
 History
 =========
 
+0.5.1 (2013-5-15)
+----------------
+* Added Python 3 http & https support (no thrift support yet for python 3) (thanks [adisbladis](https://github.com/adisbladis))
+* Removed python-dateutil requirement in favor of pytz (due to Python 3 not supporting python-dateutil)
+
 0.5.0 (2013-4-25)
 ----------------
 * rawes now throws a rawes.elastic_exception.ElasticException on http status codes of >=400 by default.  Removed rawes.Elastic "except_on_error" argument.
