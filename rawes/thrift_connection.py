@@ -91,6 +91,6 @@ class ThriftConnection(object):
         Thrift requires the params and headers dict values to only contain str values.
         """
         return dict(map(
-            lambda k, v: (k, str(v).lower() if isinstance(v, bool) else str(v)),
+            lambda (k, v): (k, str(v).lower() if isinstance(v, bool) else str(v)),
             d.iteritems()
         ))

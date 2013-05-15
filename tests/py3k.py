@@ -14,9 +14,6 @@
 #   limitations under the License.
 #
 
-ES_HOST = 'localhost'
-ES_HTTP_PORT = 9200
-ES_THRIFT_PORT = 9500
-ES_INDEX = 'rawes_test'
-ES_TYPE = 'rawes_test_type'
-HTTP_ONLY=False
+from tests import config
+config.HTTP_ONLY=True
+from tests.core_tests import *

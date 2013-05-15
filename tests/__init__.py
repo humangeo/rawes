@@ -14,4 +14,4 @@
 #   limitations under the License.
 #
 
-from core_tests import *
+from tests.core_tests import *

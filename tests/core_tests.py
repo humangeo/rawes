@@ -22,10 +22,10 @@ import rawes
 from rawes.elastic_exception import ElasticException
 from tests import test_encoder
 import unittest
-import config
+from tests import config
 import json
 from datetime import datetime
-from dateutil import tz
+from pytz import timezone
 import time
 from rawes.elastic_exception import ElasticException
 
@@ -45,9 +45,9 @@ class TestElasticCore(unittest.TestCase):
     def setUpClass(self):
         self.http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
         self.es_http = rawes.Elastic(url=self.http_url)
-        self.thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
-        self.es_thrift = rawes.Elastic(url=self.thrift_url)
-        
+        if not config.HTTP_ONLY:
+            self.thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
+            self.es_thrift = rawes.Elastic(url=self.thrift_url)
 
     def test_http(self):
         self._reset_indices(self.es_http)
@@ -60,6 +60,8 @@ class TestElasticCore(unittest.TestCase):
         self._test_no_handler_found_for_uri(self.es_http)
 
     def test_thrift(self):
+        if config.HTTP_ONLY:
+            return
         self._reset_indices(self.es_thrift)
         self._test_document_search(self.es_thrift)
         self._test_document_update(self.es_thrift)
@@ -71,21 +73,23 @@ class TestElasticCore(unittest.TestCase):
 
     def test_timeouts(self):
         es_http_short_timeout = rawes.Elastic(url=self.http_url,timeout=0.0001)
-        es_thrift_short_timeout = rawes.Elastic(url=self.thrift_url,timeout=0.0001)
         self._test_timeout(es_short_timeout=es_http_short_timeout)
-        self._test_timeout(es_short_timeout=es_thrift_short_timeout)
+
+        if not config.HTTP_ONLY:
+            es_thrift_short_timeout = rawes.Elastic(url=self.thrift_url,timeout=0.0001)
+            self._test_timeout(es_short_timeout=es_thrift_short_timeout)
 
 
     def test_empty_constructor(self):
         es = rawes.Elastic()
-        self.assertEquals(es.url.scheme, "http")
-        self.assertEquals(es.url.hostname, "localhost")
-        self.assertEquals(es.url.port, 9200)
+        self.assertEqual(es.url.scheme, "http")
+        self.assertEqual(es.url.hostname, "localhost")
+        self.assertEqual(es.url.port, 9200)
     
     def test_https(self):
         es = rawes.Elastic("https://localhost")
-        self.assertEquals(es.url.scheme, "https")
-        self.assertEquals(es.url.port, 443)
+        self.assertEqual(es.url.scheme, "https")
+        self.assertEqual(es.url.port, 443)
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
@@ -154,7 +158,7 @@ class TestElasticCore(unittest.TestCase):
             search_result = es[config.ES_INDEX].sometype['123'].get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].sometype[123].put(data={
@@ -186,7 +190,7 @@ class TestElasticCore(unittest.TestCase):
             search_result = es[config.ES_INDEX].persontype['555'].get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].persontype[555].put(data={
@@ -205,7 +209,7 @@ class TestElasticCore(unittest.TestCase):
             search_result = es[config.ES_INDEX]['persontype']['555'].get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
     def _test_bulk_load(self, es):
         index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
@@ -224,7 +228,7 @@ class TestElasticCore(unittest.TestCase):
         })
         new_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
 
-        self.assertEquals(index_size + 3, new_index_size)
+        self.assertEqual(index_size + 3, new_index_size)
 
         bulk_list = [
             {"index" : {}},
@@ -241,7 +245,7 @@ class TestElasticCore(unittest.TestCase):
         })
         newer_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
 
-        self.assertEquals(index_size + 6, newer_index_size)
+        self.assertEqual(index_size + 6, newer_index_size)
 
     def _test_datetime_encoder(self, es):
         # Ensure the document does not already exist
@@ -252,17 +256,17 @@ class TestElasticCore(unittest.TestCase):
             search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
         # Ensure no mapping exists for this type
         try:
             mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
         # Create a sample document with a datetime
-        eastern_timezone = tz.gettz('America/New_York')
+        eastern_timezone = timezone('US/Eastern')
         test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'dateme',
@@ -281,12 +285,12 @@ class TestElasticCore(unittest.TestCase):
         if test_type not in mapping:
             raise(Exception('type %s not in mapping: %r' % (test_type,mapping)))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
-        self.assertEquals(mapping_date_format,'dateOptionalTime')
+        self.assertEqual(mapping_date_format,'dateOptionalTime')
 
         # Verify the document was created and has the proper date
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue('exists' in search_result and search_result['exists'])
-        self.assertEquals('2012-11-12T14:30:03Z',search_result['_source']['updated'])
+        self.assertEqual('2012-11-12T14:30:03Z',search_result['_source']['updated'])
 
     def _test_custom_encoder(self, es):
         # Ensure the document does not already exist
@@ -296,17 +300,17 @@ class TestElasticCore(unittest.TestCase):
             search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
         # Ensure no mapping exists for this type
         try:
             mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,404)
+            self.assertEqual(e.status_code,404)
 
         # Create a sample document with a datetime
-        eastern_timezone = tz.gettz('America/New_York')
+        eastern_timezone = timezone('US/Eastern')
         test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'dateme',
@@ -323,19 +327,19 @@ class TestElasticCore(unittest.TestCase):
         # Verify the mapping was created properly
         mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
-        self.assertEquals(mapping_date_format,'dateOptionalTime')
+        self.assertEqual(mapping_date_format,'dateOptionalTime')
 
         # Verify the document was created and has the proper date
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue(search_result['exists'])
-        self.assertEquals('2012-11-12',search_result['_source']['updated'])
+        self.assertEqual('2012-11-12',search_result['_source']['updated'])
 
     def _test_timeout(self,es_short_timeout):
         timed_out = False
         try:
             result = es_short_timeout.get("/_mapping")
         except Exception as e:
-            timed_out = str(e.message).find('timed out') > -1
+            timed_out = str("{0}".format(e)).find('timed out') > -1
         self.assertTrue(timed_out)
 
     def _test_no_handler_found_for_uri(self,es):
@@ -343,7 +347,7 @@ class TestElasticCore(unittest.TestCase):
             es[config.ES_INDEX].nopedontexist.get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEquals(e.status_code,400)
+            self.assertEqual(e.status_code,400)
 
     def _wait_for_good_health(self,es):
         # Give elasticsearch a few seconds to turn 'yellow' or 'green' after an operation
