@@ -289,6 +289,11 @@ Run tests:
 $ python -m unittest tests
 ```
 
+Run tests for Python 3 (no thrift tests, no need to "pip install thrift")
+```bash
+$ python3 -m unittest tests.py3k
+```
+
 License
 -------
 Apache 2.0 License
