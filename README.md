@@ -261,7 +261,7 @@ except ElasticException as e:
 
 Thrift support
 --------------
-Thrift is supported for Python 2.x versions.  Before thrift will work with rawes, you must install the thrift python module
+Thrift is supported for Python 2.x versions only.  Before thrift will work with rawes, you must install the thrift python module
 ```bash
 $ pip install thrift
 ```
