@@ -23,7 +23,7 @@ from .http_connection import HttpConnection
 from .encoders import encode_date_optional_time
 import sys
 
-if sys.version_info.major > 2:
+if sys.version_info[0] > 2:
     import urllib.parse as urlparse
 else:
     import urlparse
