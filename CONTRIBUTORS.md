@@ -10,3 +10,4 @@ rawes is made possible by contributions from:
 * Danny Holloway [@holloway_danny](https://twitter.com/holloway_danny)
 * Vincent Driessen [@nvie](https://github.com/nvie) [github.com/nvie](https://github.com/nvie)
 * adisbladis [github.com/adisbladis](https://github.com/adisbladis)
+* Simon Kelly [github.com/snopoke](https://github.com/snopoke)

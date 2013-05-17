@@ -1,6 +1,10 @@
 History
 =========
 
+0.5.2 (2013-5-17)
+----------------
+* Python 2.6 compatibility fix (thanks [Simon Kelly](https://github.com/snopoke)!)
+
 0.5.1 (2013-5-15)
 ----------------
 * Added Python 3 http & https support (no thrift support yet for python 3) (thanks [adisbladis](https://github.com/adisbladis))
