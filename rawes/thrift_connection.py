@@ -53,6 +53,12 @@ class ThriftConnection(object):
     }
 
     def request(self, method, path, **kwargs):
+        if "json_decoder" in kwargs:
+            json_decoder = kwargs["json_decoder"]
+            del kwargs["json_decoder"]
+        else:
+            json_decoder = json.loads
+
         newkwargs = self.kwargs.copy()
         newkwargs.update(kwargs)
         thriftargs = {}
@@ -70,14 +76,14 @@ class ThriftConnection(object):
         request = RestRequest(method=mapped_method, uri=path, **thriftargs)
         response = self.client.execute(request)
 
-        return self._decode(response)
+        return self._decode(response, json_decoder)
 
-    def _decode(self, response):
+    def _decode(self, response, json_decoder):
         if not response.body:
             decoded = response.status < 300
         else:
             try:
-                decoded = json.loads(response.body)
+                decoded = json_decoder(response.body)
             except ValueError:
                 decoded = False
 

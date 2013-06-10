@@ -33,19 +33,25 @@ class HttpConnection(object):
         self.session = requests.session()
         
     def request(self, method, path, **kwargs):
+        if "json_decoder" in kwargs:
+            json_decoder = kwargs["json_decoder"]
+            del kwargs["json_decoder"]
+        else:
+            json_decoder = json.loads
+
         args = self.kwargs.copy()
         args.update(kwargs)
         if 'timeout' not in args:
             args['timeout'] = self.timeout
         response = self.session.request(method, "/".join((self.url, path)), **args)
-        return self._decode(response)
+        return self._decode(response, json_decoder)
 
-    def _decode(self, response):
+    def _decode(self, response, json_decoder):
         if not response.text:
             decoded = response.status_code < 300
         else:
             try:
-                decoded = json.loads(response.text)
+                decoded = json_decoder(response.text)
             except ValueError as e: 
                 decoded = False
 
