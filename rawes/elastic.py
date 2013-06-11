@@ -40,7 +40,7 @@ class Elastic(object):
             if self.url.scheme == 'http' or self.url.scheme == 'https':
                 connection = HttpConnection(self.url.geturl(), timeout=self.timeout, **kwargs)
             else:
-                if sys.version_info.major > 2:
+                if sys.version_info[0] > 2:
                     raise ValueError("Thrift transport not available for Python 3")
 
                 try:
