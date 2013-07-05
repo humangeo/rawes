@@ -30,11 +30,12 @@ else:
 
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, **kwargs):
+    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, json_encoder=encode_date_optional_time, **kwargs):
         super(Elastic, self).__init__()
 
         self.url = self._decode_url(url,path)
         self.timeout = timeout  # seconds
+        self.json_encoder = json_encoder
 
         if connection is None:
             if self.url.scheme == 'http' or self.url.scheme == 'https':
@@ -74,7 +75,7 @@ class Elastic(object):
             json_encoder = kwargs['json_encoder']
             del kwargs['json_encoder']
         else:
-            json_encoder = encode_date_optional_time
+            json_encoder = self.json_encoder
 
         # Encode data dict to json if necessary
         if 'data' in kwargs and type(kwargs['data']) == dict:

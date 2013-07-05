@@ -25,6 +25,7 @@ import unittest
 from tests import config
 import json
 from datetime import datetime
+import pytz
 from pytz import timezone
 import time
 from rawes.elastic_exception import ElasticException
@@ -45,6 +46,8 @@ class TestElasticCore(unittest.TestCase):
     def setUpClass(self):
         self.http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
         self.es_http = rawes.Elastic(url=self.http_url)
+        self.custom_json_decoder = test_encoder.DateAwareJsonDecoder().decode
+        #self.es_http_es_w_decoder = rawes.Elastic(url=self.http_url,)
         if not config.HTTP_ONLY:
             self.thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
             self.es_thrift = rawes.Elastic(url=self.thrift_url)
@@ -56,7 +59,6 @@ class TestElasticCore(unittest.TestCase):
         self._test_document_delete(self.es_http)
         self._test_bulk_load(self.es_http)
         self._test_datetime_encoder(self.es_http)
-        self._test_custom_encoder(self.es_http)
         self._test_no_handler_found_for_uri(self.es_http)
 
     def test_thrift(self):
@@ -68,7 +70,6 @@ class TestElasticCore(unittest.TestCase):
         self._test_document_delete(self.es_thrift)
         self._test_bulk_load(self.es_thrift)
         self._test_datetime_encoder(self.es_thrift)
-        self._test_custom_encoder(self.es_thrift)
         self._test_no_handler_found_for_uri(self.es_thrift)
 
     def test_timeouts(self):
@@ -79,6 +80,18 @@ class TestElasticCore(unittest.TestCase):
             es_thrift_short_timeout = rawes.Elastic(url=self.thrift_url,timeout=0.0001)
             self._test_timeout(es_short_timeout=es_thrift_short_timeout)
 
+    def test_json_decoder_encoder(self):
+        es_http_decoder = rawes.Elastic(url=self.http_url,json_decoder=self.custom_json_decoder)
+        es_http_encoder = rawes.Elastic(url=self.http_url,json_encoder=test_encoder.encode_custom)
+        self._test_custom_encoder(self.es_http,es_encoder=es_http_encoder)
+        self._test_custom_decoder(self.es_http,es_decoder=es_http_decoder)
+        if not config.HTTP_ONLY:
+            self._reset_indices(self.es_thrift)
+            self._wait_for_good_health(self.es_thrift)
+            es_thrift_decoder = rawes.Elastic(url=self.thrift_url,json_decoder=self.custom_json_decoder)
+            es_thrift_encoder = rawes.Elastic(url=self.thrift_url,json_encoder=test_encoder.encode_custom)
+            self._test_custom_encoder(self.es_thrift,es_encoder=es_thrift_encoder)
+            self._test_custom_decoder(self.es_thrift,es_decoder=es_thrift_decoder)
 
     def test_empty_constructor(self):
         es = rawes.Elastic()
@@ -292,7 +305,7 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue('exists' in search_result and search_result['exists'])
         self.assertEqual('2012-11-12T14:30:03Z',search_result['_source']['updated'])
 
-    def _test_custom_encoder(self, es):
+    def _test_custom_encoder(self, es, es_encoder):
         # Ensure the document does not already exist
         test_type = 'customdatetimetesttype'
         test_id = 456
@@ -300,7 +313,7 @@ class TestElasticCore(unittest.TestCase):
             search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertTrue(e.status_code >= 404)
 
         # Ensure no mapping exists for this type
         try:
@@ -333,6 +346,66 @@ class TestElasticCore(unittest.TestCase):
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue(search_result['exists'])
         self.assertEqual('2012-11-12',search_result['_source']['updated'])
+
+        # Ensure that the class level encoder works
+        # Encode a new doc w class encoder
+        encoded_test_id = 12412545
+        encoded_insert_result = es_encoder.put('%s/%s/%s' % (config.ES_INDEX, test_type, encoded_test_id), data={
+            'name': 'dateme',
+            'updated' : test_updated
+        }, params={
+            'refresh': 'true'
+        })
+        encoded_search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, encoded_test_id))
+        self.assertTrue(encoded_search_result['exists'])
+        self.assertEqual('2012-11-12',encoded_search_result['_source']['updated'])
+
+    def _test_custom_decoder(self,es, es_decoder):
+        # Ensure the document does not already exist
+        test_type = 'customdecodertype'
+        test_id = 889988
+        try:
+            search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+            self.fail("Document should not exist")
+        except ElasticException as e:
+            self.assertEqual(e.status_code,404)
+
+        # Create a sample document with a value %Y-%m-%d
+        insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
+            'name': 'testdecode',
+            'updated' : "2013-07-04"
+        }, params={
+            'refresh': 'true'
+        })
+        self.assertTrue(insert_result['ok'])
+
+        # Flush the index after adding the new item to ensure the mapping is updated
+        refresh_result = es.post('%s/_flush' % config.ES_INDEX)
+        self.assertTrue(refresh_result['ok'])
+
+        # Ensure the document was created
+        search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+        self.assertTrue(search_result['exists'])
+        self.assertEqual(type(search_result['_source']['updated']),unicode)
+        self.assertEqual('2013-07-04',search_result['_source']['updated'])
+
+        # Ensure the class level json decoder works
+        search_result_constructor_decoded = es_decoder.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+        self.assertTrue(search_result_constructor_decoded['exists'])
+        self.assertEqual(type(search_result_constructor_decoded['_source']['updated']),datetime)
+        self.assertEqual(search_result_constructor_decoded['_source']['updated'].year, 2013)
+        self.assertEqual(search_result_constructor_decoded['_source']['updated'].month, 07)
+        self.assertEqual(search_result_constructor_decoded['_source']['updated'].day, 04)
+        self.assertEqual(search_result_constructor_decoded['_source']['updated'].tzinfo, pytz.utc)
+
+        # Ensure the request level json decoder works
+        search_result_decoded = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id),json_decoder=self.custom_json_decoder)
+        self.assertTrue(search_result_decoded['exists'])
+        self.assertEqual(type(search_result_decoded['_source']['updated']), datetime)
+        self.assertEqual(search_result_decoded['_source']['updated'].year, 2013)
+        self.assertEqual(search_result_decoded['_source']['updated'].month, 07)
+        self.assertEqual(search_result_decoded['_source']['updated'].day, 04)
+        self.assertEqual(search_result_decoded['_source']['updated'].tzinfo, pytz.utc)
 
     def _test_timeout(self,es_short_timeout):
         timed_out = False

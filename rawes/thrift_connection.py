@@ -53,15 +53,14 @@ class ThriftConnection(object):
     }
 
     def request(self, method, path, **kwargs):
-        if "json_decoder" in kwargs:
-            json_decoder = kwargs["json_decoder"]
-            del kwargs["json_decoder"]
-        else:
-            json_decoder = json.loads
-
         newkwargs = self.kwargs.copy()
         newkwargs.update(kwargs)
         thriftargs = {}
+
+        if "json_decoder" in newkwargs:
+            json_decoder = newkwargs["json_decoder"]
+        else:
+            json_decoder = json.loads
 
         if 'data' in newkwargs:
             thriftargs['body'] = newkwargs['data']

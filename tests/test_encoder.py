@@ -16,6 +16,7 @@
 
 import datetime
 import pytz
+import json
 
 def encode_custom(obj):
     """
@@ -24,3 +25,19 @@ def encode_custom(obj):
     if isinstance(obj, datetime.datetime):
         return obj.astimezone(pytz.utc).strftime('%Y-%m-%d')
     raise TypeError(repr(obj) + " is not JSON serializable")
+
+class DateAwareJsonDecoder(json.JSONDecoder):
+    """
+    Automatically decode Y-m-d strings to python datetime objects in UTC timezone
+    """
+    def __init__(self):
+        json.JSONDecoder.__init__(self, object_hook=self.dict_to_object)
+    
+    def dict_to_object(self, d):
+        for k,v in d.iteritems():
+            if type(v) == unicode:
+                try:
+                    d[k] = pytz.utc.localize(datetime.datetime.strptime( v, "%Y-%m-%d"))
+                except Exception as e:
+                    pass
+        return d

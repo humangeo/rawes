@@ -33,14 +33,15 @@ class HttpConnection(object):
         self.session = requests.session()
         
     def request(self, method, path, **kwargs):
-        if "json_decoder" in kwargs:
-            json_decoder = kwargs["json_decoder"]
-            del kwargs["json_decoder"]
+        args = self.kwargs.copy()
+        args.update(kwargs)
+
+        if "json_decoder" in args:
+            json_decoder = args["json_decoder"]
+            del args["json_decoder"]
         else:
             json_decoder = json.loads
 
-        args = self.kwargs.copy()
-        args.update(kwargs)
         if 'timeout' not in args:
             args['timeout'] = self.timeout
         response = self.session.request(method, "/".join((self.url, path)), **args)
