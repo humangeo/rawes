@@ -1,6 +1,11 @@
 History
 =========
 
+0.5.3 (2013-7-4)
+----------------
+* Added JSON decoder support (thanks [adisbladis](https://github.com/adisbladis))
+* Added JSON encoder argument to rawes.Elastic constructor
+
 0.5.2 (2013-5-17)
 ----------------
 * Python 2.6 compatibility fix (thanks [Simon Kelly](https://github.com/snopoke)!)
