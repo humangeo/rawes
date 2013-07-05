@@ -242,6 +242,89 @@ es.get('tweets/tweet/445')['_source']['post_date']
 u'2012-11-12'
 ```
 
+Additionally, a default JSON encoder can be specified in the rawes.Elastic constructor:
+
+```python
+import rawes
+from datetime import datetime
+from dateutil import tz
+eastern_timezone = tz.gettz('America/New_York')
+
+def encode_custom(obj):
+    if isinstance(obj, datetime):
+        return obj.astimezone(tz.tzutc()).strftime('%Y-%m-%d')
+    raise TypeError(repr(obj) + " is not JSON serializable")
+
+es = rawes.Elastic("http://localhost:9200", json_encoder=encode_custom)
+
+es.put('tweets/tweet/445', data={
+    'user' : 'dwnoble',
+    'post_date' : datetime(2012, 11, 12, 9, 45, 45, tzinfo=eastern_timezone),
+    'message' : 'Tweeting about elasticsearch'
+})
+
+es.get('tweets/tweet/445')['_source']['post_date']
+# Returns:
+u'2012-11-12'
+```
+
+JSON Decoding
+-------------
+
+Like with JSON encoding, a custom JSON decoder may be specified as well to parse elasticsearch results.  A common use case here may be parsing ISO8601 dates to python datetime objects.
+
+Index a document with a ISO8601 formatted date string:
+
+```python
+import rawes
+es = rawes.Elastic()
+
+es.put('blogs/post/3', data={
+    'user' : 'dan',
+    'post_date' : '2013-7-04T23:14:53Z',
+    'title' : 'Elasticsearch 2',
+    'body' : 'More blogging about elasticsearch'
+})
+```
+
+Define a custom JSON decoder:
+```python
+import json
+import pytz
+import dateutil.parser
+
+class Iso8601JsonDecoder(json.JSONDecoder):
+    """
+    Automatically decode ISO8601 strings with key "post_date" to python datetime objects in UTC timezone
+    """
+    def __init__(self):
+        json.JSONDecoder.__init__(self, object_hook=self.dict_to_object)
+    
+    def dict_to_object(self, d):
+        for k,v in d.iteritems():
+            if k == "post_date":
+                d[k] = dateutil.parser.parse(v)
+        return d
+
+
+iso8601_json_decoder = Iso8601JsonDecoder()
+
+```
+
+Now retrieve this document using our JSON decoder
+```python
+es.get("blogs/post/3")["_source"]["post_date"]
+# returns:
+# u'2013-7-04T23:14:53Z'
+es.get("blogs/post/3",json_decoder=iso8601_json_decoder.decode)["_source"]["post_date"]
+# returns:
+# datetime.datetime(2013, 7, 4, 23, 14, 53, tzinfo=tzutc())
+es_default_decoder = rawes.Elastic(json_decoder=iso8601_json_decoder.decode)
+es_default_decoder.get("blogs/post/3")["_source"]["post_date"]
+# returns:
+# datetime.datetime(2013, 7, 4, 23, 14, 53, tzinfo=tzutc())
+```
+
 Error Handling
 --------------
 As of version 0.5, the rawes.Elastic constructor throws a rawes.elastic_exception.ElasticException any time elasticsearch returns an http status code of 400 or greater.
