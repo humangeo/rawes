@@ -22,6 +22,7 @@ except ImportError:
 import requests
 from .elastic_exception import ElasticException
 
+
 class HttpConnection(object):
     """Connects to elasticsearch over HTTP"""
     def __init__(self, url, timeout=None, **kwargs):
@@ -31,7 +32,7 @@ class HttpConnection(object):
         self.timeout = timeout
         self.kwargs = kwargs
         self.session = requests.session()
-        
+
     def request(self, method, path, **kwargs):
         args = self.kwargs.copy()
         args.update(kwargs)
@@ -44,7 +45,8 @@ class HttpConnection(object):
 
         if 'timeout' not in args:
             args['timeout'] = self.timeout
-        response = self.session.request(method, "/".join((self.url, path)), **args)
+        response = self.session.request(method,
+                                        "/".join((self.url, path)), **args)
         return self._decode(response, json_decoder)
 
     def _decode(self, response, json_decoder):
@@ -53,10 +55,11 @@ class HttpConnection(object):
         else:
             try:
                 decoded = json_decoder(response.text)
-            except ValueError as e: 
+            except ValueError:
                 decoded = False
 
         if response.status_code >= 400:
-            raise ElasticException(message="ElasticSearch Error: {0}".format(response.text),
-                                   result=decoded, status_code=response.status_code)
+            raise ElasticException(
+                    message="ElasticSearch Error: {0}".format(response.text),
+                    result=decoded, status_code=response.status_code)
         return decoded
