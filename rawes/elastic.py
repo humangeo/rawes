@@ -28,27 +28,34 @@ if sys.version_info[0] > 2:
 else:
     import urlparse
 
+
 class Elastic(object):
     """Connect to an elasticsearch instance"""
-    def __init__(self, url='localhost:9200', path='', timeout=30, connection=None, json_encoder=encode_date_optional_time, **kwargs):
+    def __init__(self, url='localhost:9200', path='', timeout=30,
+                 connection=None,
+                 json_encoder=encode_date_optional_time, **kwargs):
         super(Elastic, self).__init__()
 
-        self.url = self._decode_url(url,path)
+        self.url = self._decode_url(url, path)
         self.timeout = timeout  # seconds
         self.json_encoder = json_encoder
 
         if connection is None:
             if self.url.scheme == 'http' or self.url.scheme == 'https':
-                connection = HttpConnection(self.url.geturl(), timeout=self.timeout, **kwargs)
+                connection = HttpConnection(self.url.geturl(),
+                                            timeout=self.timeout, **kwargs)
             else:
                 if sys.version_info[0] > 2:
-                    raise ValueError("Thrift transport not available for Python 3")
+                    raise ValueError("Thrift transport is not available "
+                                     "for Python 3")
 
                 try:
                     from thrift_connection import ThriftConnection
                 except ImportError:
-                    raise ImportError("The 'thrift' python package does not seem to be installed.")
-                connection = ThriftConnection(self.url.hostname, self.url.port, timeout=self.timeout, **kwargs)
+                    raise ImportError("The 'thrift' python package "
+                                        "does not seem to be installed.")
+                connection = ThriftConnection(self.url.hostname, self.url.port,
+                                              timeout=self.timeout, **kwargs)
 
         self.connection = connection
 
@@ -130,6 +137,7 @@ class Elastic(object):
             elif url.scheme == 'thrift':
                 netloc = "{0}:{1}".format(netloc, 9500)
 
-        # Return new url. 
-        return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path, query='', fragment='')
+        # Return new url.
+        return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path,
+                                    query='', fragment='')
 
