@@ -52,3 +52,10 @@ tmtags
 
 # Node
 node_modules
+
+# Eclipse
+.project
+.pydevproject
+
+# Emacs
+*~
