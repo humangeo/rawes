@@ -32,34 +32,28 @@ else:
 
 class ElasticRequest(object):
     """Connect to an elasticsearch instance"""
+
     def __init__(self, url='localhost:9200', path='', timeout=30,
                  connection=None,
                  json_encoder=encode_date_optional_time,
                  connection_pool=None, **kwargs):
+        """
+            Don't use this constructor
+        """
+
         super(ElasticRequest, self).__init__()
 
+        if not isinstance(url, str):
+            url = 'localhost:9200/'
         self.url = self._decode_url(url, path)
+
         self.timeout = timeout  # seconds
         self.json_encoder = json_encoder
 
-        if connection is None:
-            if self.url.scheme == 'http' or self.url.scheme == 'https':
-                connection = HttpConnection(self.url.geturl(),
-                                            timeout=self.timeout, **kwargs)
-            else:
-                if sys.version_info[0] > 2:
-                    raise ValueError("Thrift transport is not available "
-                                     "for Python 3")
-
-                try:
-                    from thrift_connection import ThriftConnection
-                except ImportError:
-                    raise ImportError("The 'thrift' python package "
-                                        "does not seem to be installed.")
-                connection = ThriftConnection(self.url.hostname, self.url.port,
-                                              timeout=self.timeout, **kwargs)
-
         self.connection = connection
+
+        if connection_pool is None:
+            raise ValueError('A connection pool should always be specified')
         self.connection_pool = connection_pool
 
     def put(self, path='', **kwargs):
@@ -91,7 +85,9 @@ class ElasticRequest(object):
         if 'data' in kwargs and type(kwargs['data']) == dict:
             kwargs['data'] = json.dumps(kwargs['data'], default=json_encoder)
 
-        return self.connection.request(method, new_path, **kwargs)
+        # Always select a connection from the pool for each new request
+        return self.connection_pool.get_connection().request(
+                                                    method, new_path, **kwargs)
 
     def __getattr__(self, path_item):
         return self.__getitem__(path_item)
@@ -102,7 +98,8 @@ class ElasticRequest(object):
             url=self.url.geturl(),
             timeout=self.timeout,
             path=new_path,
-            connection=self.connection
+            connection=self.connection,
+            connection_pool=self.connection_pool
         )
 
     def _build_path(self, base_path, path_item):
@@ -144,12 +141,11 @@ class ElasticRequest(object):
         return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path,
                                     query='', fragment='')
 
-    def _get_connection_from_url(self, url, **kwargs):
+    def _get_connection_from_url(self, url, timeout, **kwargs):
         url = self._decode_url(url, "")
 
         if url.scheme == 'http' or url.scheme == 'https':
-            return HttpConnection(url.geturl(),
-                                        timeout=self.timeout, **kwargs)
+            return HttpConnection(url.geturl(), timeout=timeout, **kwargs)
         else:
             if sys.version_info[0] > 2:
                 raise ValueError("Thrift transport is not available "
@@ -161,7 +157,7 @@ class ElasticRequest(object):
                 raise ImportError("The 'thrift' python package "
                                     "does not seem to be installed.")
             return ThriftConnection(url.hostname, url.port,
-                                    timeout=self.timeout, **kwargs)
+                                    timeout=timeout, **kwargs)
 
 
 class Elastic(ElasticRequest):
@@ -170,25 +166,21 @@ class Elastic(ElasticRequest):
                  connection=None,
                  json_encoder=encode_date_optional_time, **kwargs):
 
-        connections = []
-        if isinstance(url, list):
+        if connection is None:
+            urls = [url] if not isinstance(url, list) else url
             # Validate all urls are of correct format host:port
-            for url_item in url:
+            for url_item in urls:
                 if '//' not in url_item:
                     url_item = '//' + url_item
                 if urlparse.urlsplit(url_item).path not in ['', '/']:
                     raise ValueError('Url paths not allowed when providing hosts')
-            if connection is None:
-                connections = [(self._get_connection_from_url(url_item,
-                                            **kwargs), {}) for url_item in url]
-            else:
-                connections = [connection]
 
-        connection_pool = ConnectionPool(connections)
+            connection_pool = ConnectionPool([(
+                                self._get_connection_from_url(url_item, timeout,
+                                **kwargs), {}) for url_item in urls])
 
-        # If a connection was specified, override any url list provided
-        if connection is None and isinstance(url, list):
-            connection = connection_pool.get_connection()
+        else:
+            connection_pool = ConnectionPool([connection])
 
         ElasticRequest.__init__(self, url, path, timeout, connection,
                  json_encoder, connection_pool=connection_pool, **kwargs)
