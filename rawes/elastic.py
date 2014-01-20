@@ -13,6 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
+from elasticsearch.connection_pool import ConnectionPool
 
 try:
     import simplejson as json
@@ -29,12 +30,13 @@ else:
     import urlparse
 
 
-class Elastic(object):
+class ElasticRequest(object):
     """Connect to an elasticsearch instance"""
     def __init__(self, url='localhost:9200', path='', timeout=30,
                  connection=None,
-                 json_encoder=encode_date_optional_time, **kwargs):
-        super(Elastic, self).__init__()
+                 json_encoder=encode_date_optional_time,
+                 connection_pool=None, **kwargs):
+        super(ElasticRequest, self).__init__()
 
         self.url = self._decode_url(url, path)
         self.timeout = timeout  # seconds
@@ -58,6 +60,7 @@ class Elastic(object):
                                               timeout=self.timeout, **kwargs)
 
         self.connection = connection
+        self.connection_pool = connection_pool
 
     def put(self, path='', **kwargs):
         return self.request('put', path, **kwargs)
@@ -95,7 +98,7 @@ class Elastic(object):
 
     def __getitem__(self, path_item):
         new_path = self._build_path(self.url.path, path_item)
-        return Elastic(
+        return ElasticRequest(
             url=self.url.geturl(),
             timeout=self.timeout,
             path=new_path,
@@ -141,3 +144,51 @@ class Elastic(object):
         return urlparse.SplitResult(scheme=scheme, netloc=netloc, path=path,
                                     query='', fragment='')
 
+    def _get_connection_from_url(self, url, **kwargs):
+        url = self._decode_url(url, "")
+
+        if url.scheme == 'http' or url.scheme == 'https':
+            return HttpConnection(url.geturl(),
+                                        timeout=self.timeout, **kwargs)
+        else:
+            if sys.version_info[0] > 2:
+                raise ValueError("Thrift transport is not available "
+                                 "for Python 3")
+
+            try:
+                from thrift_connection import ThriftConnection
+            except ImportError:
+                raise ImportError("The 'thrift' python package "
+                                    "does not seem to be installed.")
+            return ThriftConnection(url.hostname, url.port,
+                                    timeout=self.timeout, **kwargs)
+
+
+class Elastic(ElasticRequest):
+
+    def __init__(self, url='localhost:9200', path='', timeout=30,
+                 connection=None,
+                 json_encoder=encode_date_optional_time, **kwargs):
+
+        connections = []
+        if isinstance(url, list):
+            # Validate all urls are of correct format host:port
+            for url_item in url:
+                if '//' not in url_item:
+                    url_item = '//' + url_item
+                if urlparse.urlsplit(url_item).path not in ['', '/']:
+                    raise ValueError('Url paths not allowed when providing hosts')
+            if connection is None:
+                connections = [(self._get_connection_from_url(url_item,
+                                            **kwargs), {}) for url_item in url]
+            else:
+                connections = [connection]
+
+        connection_pool = ConnectionPool(connections)
+
+        # If a connection was specified, override any url list provided
+        if connection is None and isinstance(url, list):
+            connection = connection_pool.get_connection()
+
+        ElasticRequest.__init__(self, url, path, timeout, connection,
+                 json_encoder, connection_pool=connection_pool, **kwargs)
