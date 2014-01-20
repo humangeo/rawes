@@ -98,7 +98,7 @@ class TestElasticCore(unittest.TestCase):
         self.assertEqual(es.url.scheme, "http")
         self.assertEqual(es.url.hostname, "localhost")
         self.assertEqual(es.url.port, 9200)
-    
+
     def test_https(self):
         es = rawes.Elastic("https://localhost")
         self.assertEqual(es.url.scheme, "https")
@@ -108,7 +108,7 @@ class TestElasticCore(unittest.TestCase):
         # If the index does not exist, test creating it and deleting it
         try:
             index_status_result = es.get('%s/_status' % config.ES_INDEX)
-        except ElasticException: 
+        except ElasticException:
             create_index_result = es.put(config.ES_INDEX)
 
         # Test deleting the index
@@ -386,7 +386,6 @@ class TestElasticCore(unittest.TestCase):
         # Ensure the document was created
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue(search_result['exists'])
-        self.assertEqual(type(search_result['_source']['updated']),unicode)
         self.assertEqual('2013-07-04',search_result['_source']['updated'])
 
         # Ensure the class level json decoder works
