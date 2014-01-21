@@ -50,8 +50,6 @@ class ElasticRequest(object):
         self.timeout = timeout  # seconds
         self.json_encoder = json_encoder
 
-        self.connection = connection
-
         if connection_pool is None:
             raise ValueError('A connection pool should always be specified')
         self.connection_pool = connection_pool
@@ -98,7 +96,6 @@ class ElasticRequest(object):
             url=self.url.geturl(),
             timeout=self.timeout,
             path=new_path,
-            connection=self.connection,
             connection_pool=self.connection_pool
         )
 
