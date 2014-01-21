@@ -13,16 +13,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 #
-from elasticsearch.connection_pool import ConnectionPool
 
+import sys
+
+from .connection_pool import ConnectionPool
+from .encoders import encode_date_optional_time
+from .http_connection import HttpConnection
 try:
     import simplejson as json
 except ImportError:
     import json  # noqa
-
-from .http_connection import HttpConnection
-from .encoders import encode_date_optional_time
-import sys
 
 if sys.version_info[0] > 2:
     import urllib.parse as urlparse
