@@ -14,6 +14,7 @@
 #   limitations under the License.
 #
 
+import re
 import sys
 
 from .connection_pool import ConnectionPool
@@ -30,7 +31,7 @@ else:
     import urlparse
 
 
-class ElasticRequest(object):
+class Elastic(object):
     """Connect to an elasticsearch instance"""
 
     def __init__(self, url='localhost:9200', path='', timeout=30,
@@ -38,20 +39,42 @@ class ElasticRequest(object):
                  json_encoder=encode_date_optional_time,
                  connection_pool=None, **kwargs):
         """
-            Don't use this constructor
+            Add documentation here
         """
 
-        super(ElasticRequest, self).__init__()
+        super(Elastic, self).__init__()
 
-        if not isinstance(url, str):
-            url = 'localhost:9200/'
-        self.url = self._decode_url(url, path)
+        if not isinstance(url, list) and not isinstance(url, str):
+            raise ValueError('Url provided is not of right type')
 
-        self.timeout = timeout  # seconds
-        self.json_encoder = json_encoder
+        # Clean up url of any path items
+        if isinstance(url, str):
+            decoded_url = self._decode_url(url, '')
+            path = self._build_path(decoded_url.path, path)
+            url = decoded_url.netloc
+            if decoded_url.scheme:
+                url = '{0}://{1}'.format(decoded_url.scheme, url)
 
         if connection_pool is None:
-            raise ValueError('A connection pool should always be specified')
+            if connection is None:
+                urls = [url] if isinstance(url, str) else url
+                # Validate all urls are of correct format host:port
+                for host_url in urls:
+                    if '//' not in host_url:
+                        host_url = '//' + host_url
+                    if urlparse.urlsplit(host_url).path not in ['', '/']:
+                        raise ValueError('Url paths not allowed when providing hosts')
+
+                connection_pool = ConnectionPool([(
+                                self._get_connection_from_url(host_url, timeout,
+                                **kwargs), {}) for host_url in urls])
+
+            else:
+                connection_pool = ConnectionPool([connection])
+
+        self.path = path
+        self.timeout = timeout  # seconds
+        self.json_encoder = json_encoder
         self.connection_pool = connection_pool
 
     def put(self, path='', **kwargs):
@@ -70,7 +93,7 @@ class ElasticRequest(object):
         return self.request('head', path, **kwargs)
 
     def request(self, method, path, **kwargs):
-        new_path = self._build_path(self.url.path, path)
+        new_path = self._build_path(self.path, path)
 
         # Look for a custom json encoder
         if 'json_encoder' in kwargs:
@@ -91,16 +114,17 @@ class ElasticRequest(object):
         return self.__getitem__(path_item)
 
     def __getitem__(self, path_item):
-        new_path = self._build_path(self.url.path, path_item)
-        return ElasticRequest(
-            url=self.url.geturl(),
+        new_path = self._build_path(self.path, path_item)
+        return Elastic(
             timeout=self.timeout,
             path=new_path,
             connection_pool=self.connection_pool
         )
 
     def _build_path(self, base_path, path_item):
-        return '/'.join((str(base_path), str(path_item))) if base_path != '' else str(path_item)
+        new_path = '/'.join((str(base_path), str(path_item))) if base_path != '' else str(path_item)
+        # Clean up path of any extraneous forward slashes
+        return re.sub("/{2,}", "/", new_path)
 
     def _decode_url(self, url, path):
         # Make sure urlsplit() doesn't choke on scheme-less URLs, like 'localhost:9200'
@@ -155,29 +179,3 @@ class ElasticRequest(object):
                                     "does not seem to be installed.")
             return ThriftConnection(url.hostname, url.port,
                                     timeout=timeout, **kwargs)
-
-
-class Elastic(ElasticRequest):
-
-    def __init__(self, url='localhost:9200', path='', timeout=30,
-                 connection=None,
-                 json_encoder=encode_date_optional_time, **kwargs):
-
-        if connection is None:
-            urls = [url] if not isinstance(url, list) else url
-            # Validate all urls are of correct format host:port
-            for url_item in urls:
-                if '//' not in url_item:
-                    url_item = '//' + url_item
-                if urlparse.urlsplit(url_item).path not in ['', '/']:
-                    raise ValueError('Url paths not allowed when providing hosts')
-
-            connection_pool = ConnectionPool([(
-                                self._get_connection_from_url(url_item, timeout,
-                                **kwargs), {}) for url_item in urls])
-
-        else:
-            connection_pool = ConnectionPool([connection])
-
-        ElasticRequest.__init__(self, url, path, timeout, connection,
-                 json_encoder, connection_pool=connection_pool, **kwargs)
