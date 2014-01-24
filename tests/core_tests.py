@@ -18,6 +18,7 @@ import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import mock
 import rawes
 from rawes.elastic_exception import ElasticException
 from tests import test_encoder
@@ -93,17 +94,18 @@ class TestElasticCore(unittest.TestCase):
             self._test_custom_decoder(self.es_thrift,es_decoder=es_thrift_decoder)
 
     def test_empty_constructor(self):
-        # TODO: redo this test using mocks
-        es = rawes.Elastic()
-        #self.assertEqual(url.scheme, "http")
-        #self.assertEqual(url.hostname, "localhost")
-        #self.assertEqual(url.port, 9200)
+        with mock.patch('rawes.http_connection.HttpConnection.__init__',
+                mock.MagicMock(return_value=None)) as new_connection:
+            rawes.Elastic()
+            new_connection.assert_called_with('http://localhost:9200',
+                                              timeout=30)
 
     def test_https(self):
-        # TODO: redo this test using mocks
-        es = rawes.Elastic("https://localhost")
-        #self.assertEqual(url.scheme, "https")
-        #self.assertEqual(url.port, 443)
+        with mock.patch('rawes.http_connection.HttpConnection.__init__',
+                mock.MagicMock(return_value=None)) as new_connection:
+            rawes.Elastic("https://localhost")
+            new_connection.assert_called_with('https://localhost:443',
+                                              timeout=30)
 
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
