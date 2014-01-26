@@ -362,6 +362,16 @@ import rawes
 es_thrift = rawes.Elastic('thrift://localhost:8500')
 ```
 
+Connection Pooling
+------------------
+Conenction pooling support was added by importing over the code that is already present in [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py/blob/master/elasticsearch/connection_pool.py)
+Right now the way it works is by simply giving a lists of hosts as a parameter to the rawes constructor. This will enable calls to be executed to this list of hosts in a round robin fashion.
+```python
+import rawes
+es_thrift = rawes.Elastic(['http://host1:9200', 'http://host2:9200', 'http://host3:9200'])
+```
+
+
 Run Unit Tests
 --------------
 rawes' unit tests require the python thrift module to run:

@@ -1,6 +1,10 @@
 History
 =========
 
+0.5.4 (2014-1)
+----------------
+* Added connection pooling from [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py)
+
 0.5.3 (2013-7-4)
 ----------------
 * Added JSON decoder support (thanks [adisbladis](https://github.com/adisbladis))
