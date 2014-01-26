@@ -3,6 +3,7 @@ import unittest
 from mock import patch, MagicMock
 from rawes.elastic import Elastic
 from requests.models import Response
+from rawes.http_connection import HttpConnection
 
 
 class TestConnectionPooling(unittest.TestCase):
@@ -38,3 +39,17 @@ class TestConnectionPooling(unittest.TestCase):
             # Check they were called in the same order as before
             self.assertListEqual(called, called_again,
                                     'Round robin order wasn\'t preserved')
+
+    def testConnectionSpecified(self):
+        """ When a connection is specified to the constructor, a conenction
+        pool object should be created with that single connection
+        """
+        connection = HttpConnection('http://singleconnectionhost:9200')
+        es = Elastic(connection=connection)
+        with patch('rawes.http_connection.requests.Session.request',
+                MagicMock(return_value=None)) as request:
+            request.return_value = Response()
+            es.get()
+            request.assert_called_with('get',
+                                       'http://singleconnectionhost:9200/',
+                                       timeout=None)

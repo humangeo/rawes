@@ -52,7 +52,7 @@ class Elastic(object):
             to wait before timing out a call
         :param connection: (optional) if you already have a connection object
             that you want to use you can pass it in here; in this case, the
-            url value will be ignored
+            url and timeout values will be ignored
         :param json_encoder: (optional) customize the way you encode data sent
             over to elasticsearch
         :param connection_pool: (optional) if you have a connection pool object
@@ -88,7 +88,7 @@ class Elastic(object):
                                 **kwargs), {}) for host_url in urls])
 
             else:
-                connection_pool = ConnectionPool([connection])
+                connection_pool = ConnectionPool([(connection, None)])
 
         self.path = path
         self.timeout = timeout  # seconds
