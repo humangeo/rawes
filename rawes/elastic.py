@@ -38,8 +38,26 @@ class Elastic(object):
                  connection=None,
                  json_encoder=encode_date_optional_time,
                  connection_pool=None, **kwargs):
-        """
-            Add documentation here
+        """Constructs an :class:`Elastic <Elastic>`, client object.
+        Returns :class:`Elastic <Elastic>` object.
+
+        :param url: (optional) URL for the host the client will conenct to.
+            A list of URL's can be provided if you want to use a connection
+            pool for your requests. Each new call will use a different host
+            from the conenction pool. If you don't provide any arguments to
+            this constructor then the default url will be used.
+        :param path: (optional) elasticserach api path you want to make the
+            call to.
+        :param timeout: (optional) an integer specifying the number of seconds
+            to wait before timing out a call
+        :param connection: (optional) if you already have a connection object
+            that you want to use you can pass it in here; in this case, the
+            url value will be ignored
+        :param json_encoder: (optional) customize the way you encode data sent
+            over to elasticsearch
+        :param connection_pool: (optional) if you have a connection pool object
+            that you want to reuse you can pass it in here; in this case, the
+            url value will be ignored
         """
 
         super(Elastic, self).__init__()
@@ -63,7 +81,7 @@ class Elastic(object):
                     if '//' not in host_url:
                         host_url = '//' + host_url
                     if urlparse.urlsplit(host_url).path not in ['', '/']:
-                        raise ValueError('Url paths not allowed when providing hosts')
+                        raise ValueError('Url paths not allowed in hosts list')
 
                 connection_pool = ConnectionPool([(
                                 self._get_connection_from_url(host_url, timeout,
@@ -163,6 +181,8 @@ class Elastic(object):
                                     query='', fragment='')
 
     def _get_connection_from_url(self, url, timeout, **kwargs):
+        """Returns a connection object given a string url"""
+
         url = self._decode_url(url, "")
 
         if url.scheme == 'http' or url.scheme == 'https':
