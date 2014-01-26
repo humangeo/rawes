@@ -47,7 +47,6 @@ class TestElasticCore(unittest.TestCase):
         self.http_url = '%s:%s' % (config.ES_HOST, config.ES_HTTP_PORT)
         self.es_http = rawes.Elastic(url=self.http_url)
         self.custom_json_decoder = test_encoder.DateAwareJsonDecoder().decode
-        #self.es_http_es_w_decoder = rawes.Elastic(url=self.http_url,)
         if not config.HTTP_ONLY:
             self.thrift_url = '%s:%s' % (config.ES_HOST, config.ES_THRIFT_PORT)
             self.es_thrift = rawes.Elastic(url=self.thrift_url)
@@ -73,25 +72,25 @@ class TestElasticCore(unittest.TestCase):
         self._test_no_handler_found_for_uri(self.es_thrift)
 
     def test_timeouts(self):
-        es_http_short_timeout = rawes.Elastic(url=self.http_url,timeout=0.0001)
+        es_http_short_timeout = rawes.Elastic(url=self.http_url, timeout=0.0001)
         self._test_timeout(es_short_timeout=es_http_short_timeout)
 
         if not config.HTTP_ONLY:
-            es_thrift_short_timeout = rawes.Elastic(url=self.thrift_url,timeout=0.0001)
+            es_thrift_short_timeout = rawes.Elastic(url=self.thrift_url, timeout=0.0001)
             self._test_timeout(es_short_timeout=es_thrift_short_timeout)
 
     def test_json_decoder_encoder(self):
-        es_http_decoder = rawes.Elastic(url=self.http_url,json_decoder=self.custom_json_decoder)
-        es_http_encoder = rawes.Elastic(url=self.http_url,json_encoder=test_encoder.encode_custom)
-        self._test_custom_encoder(self.es_http,es_encoder=es_http_encoder)
-        self._test_custom_decoder(self.es_http,es_decoder=es_http_decoder)
+        es_http_decoder = rawes.Elastic(url=self.http_url, json_decoder=self.custom_json_decoder)
+        es_http_encoder = rawes.Elastic(url=self.http_url, json_encoder=test_encoder.encode_custom)
+        self._test_custom_encoder(self.es_http, es_encoder=es_http_encoder)
+        self._test_custom_decoder(self.es_http, es_decoder=es_http_decoder)
         if not config.HTTP_ONLY:
             self._reset_indices(self.es_thrift)
             self._wait_for_good_health(self.es_thrift)
-            es_thrift_decoder = rawes.Elastic(url=self.thrift_url,json_decoder=self.custom_json_decoder)
-            es_thrift_encoder = rawes.Elastic(url=self.thrift_url,json_encoder=test_encoder.encode_custom)
-            self._test_custom_encoder(self.es_thrift,es_encoder=es_thrift_encoder)
-            self._test_custom_decoder(self.es_thrift,es_decoder=es_thrift_decoder)
+            es_thrift_decoder = rawes.Elastic(url=self.thrift_url, json_decoder=self.custom_json_decoder)
+            es_thrift_encoder = rawes.Elastic(url=self.thrift_url, json_encoder=test_encoder.encode_custom)
+            self._test_custom_encoder(self.es_thrift, es_encoder=es_thrift_encoder)
+            self._test_custom_decoder(self.es_thrift, es_decoder=es_thrift_decoder)
 
     def test_empty_constructor(self):
         with mock.patch('rawes.http_connection.HttpConnection.__init__',
@@ -110,12 +109,12 @@ class TestElasticCore(unittest.TestCase):
     def _reset_indices(self, es):
         # If the index does not exist, test creating it and deleting it
         try:
-            index_status_result = es.get('%s/_status' % config.ES_INDEX)
+            es.get('%s/_status' % config.ES_INDEX)
         except ElasticException:
-            create_index_result = es.put(config.ES_INDEX)
+            es.put(config.ES_INDEX)
 
         # Test deleting the index
-        delete_index_result = es.delete(config.ES_INDEX)
+        es.delete(config.ES_INDEX)
         try:
             es.get('%s/_status' % config.ES_INDEX)['status']
             self.assertTrue(False)
@@ -158,23 +157,24 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(search_result['hits']['total'] == 1)
 
         # Search for documents of both types
-        search_result2 = es.get('%s/tweet,post/_search' % config.ES_INDEX, data={
-            'query': {
-                'match_all': {}
-            }
-        }, params={
-            'size': '2'
-        })
+        search_result2 = es.get('%s/tweet,post/_search' % config.ES_INDEX,
+                                data={
+                                    'query': {
+                                        'match_all': {}
+                                    }},
+                                params={
+                                    'size': '2'
+                                })
         self.assertTrue(search_result2['hits']['total'] == 2)
 
     def _test_document_update(self, es):
         # Ensure the document does not already exist (using alternate syntax)
         self._wait_for_good_health(es)
         try:
-            search_result = es[config.ES_INDEX].sometype['123'].get()
+            es[config.ES_INDEX].sometype['123'].get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertEqual(e.status_code, 404)
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].sometype[123].put(data={
@@ -203,10 +203,10 @@ class TestElasticCore(unittest.TestCase):
     def _test_document_delete(self, es):
         # Ensure the document does not already exist (using alternate syntax)
         try:
-            search_result = es[config.ES_INDEX].persontype['555'].get()
+            es[config.ES_INDEX].persontype['555'].get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertEqual(e.status_code, 404)
 
         # Create a sample document (using alternate syntax)
         insert_result = es[config.ES_INDEX].persontype[555].put(data={
@@ -222,13 +222,14 @@ class TestElasticCore(unittest.TestCase):
 
         # Verify the document was deleted
         try:
-            search_result = es[config.ES_INDEX]['persontype']['555'].get()
+            es[config.ES_INDEX]['persontype']['555'].get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertEqual(e.status_code, 404)
 
     def _test_bulk_load(self, es):
-        index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
+        index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',
+                                            params={'size': 0})['hits']['total']
 
         bulk_body = '''
         {"index" : {}}
@@ -239,27 +240,30 @@ class TestElasticCore(unittest.TestCase):
         {"key":"value3"}
         '''
 
-        es[config.ES_INDEX][config.ES_TYPE].post('_bulk', data = bulk_body, params={
+        es[config.ES_INDEX][config.ES_TYPE].post('_bulk', data=bulk_body, params={
             'refresh': 'true'
         })
-        new_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
+        new_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search', params={'size': 0})['hits']['total']
 
         self.assertEqual(index_size + 3, new_index_size)
 
         bulk_list = [
-            {"index" : {}},
-            {"key":"value4"},
-            {"index" : {}},
-            {"key":"value5"},
-            {"index" : {}},
-            {"key":"value6"}
+            {"index": {}},
+            {"key": "value4"},
+            {"index": {}},
+            {"key": "value5"},
+            {"index": {}},
+            {"key": "value6"}
         ]
 
-        bulk_body_2 = '\n'.join(map(json.dumps, bulk_list))+'\n'
-        es[config.ES_INDEX][config.ES_TYPE].post('_bulk', data = bulk_body_2, params={
-            'refresh': 'true'
-        })
-        newer_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',params={'size':0})['hits']['total']
+        bulk_body_2 = '\n'.join(map(json.dumps, bulk_list)) + '\n'
+        es[config.ES_INDEX][config.ES_TYPE].post('_bulk',
+                                                 data=bulk_body_2,
+                                                 params={
+                                                    'refresh': 'true'
+                                                })
+        newer_index_size = es[config.ES_INDEX][config.ES_TYPE].get('_search',
+                                            params={'size': 0})['hits']['total']
 
         self.assertEqual(index_size + 6, newer_index_size)
 
@@ -269,25 +273,27 @@ class TestElasticCore(unittest.TestCase):
         test_id = 123
 
         try:
-            search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+            es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertEqual(e.status_code, 404)
 
         # Ensure no mapping exists for this type
         try:
-            mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+            es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertEqual(e.status_code, 404)
 
         # Create a sample document with a datetime
         eastern_timezone = timezone('US/Eastern')
         test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
-        insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
-            'name': 'dateme',
-            'updated' : test_updated
-        })
+        insert_result = es.put('%s/%s/%s' % (config.ES_INDEX,
+                                             test_type, test_id),
+                                             data={
+                                                'name': 'dateme',
+                                                'updated': test_updated
+                                            })
         self.assertTrue(insert_result['ok'])
 
         # Refresh the index after setting the mapping
@@ -295,42 +301,42 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(refresh_result['ok'])
 
         # Verify the mapping was created properly
-        time.sleep(0.5) # Wait for the mapping to exist.  Probably a better way to do this
+        time.sleep(0.5)  # Wait for the mapping to exist.  Probably a better way to do this
         mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
 
         if test_type not in mapping:
-            raise(Exception('type %s not in mapping: %r' % (test_type,mapping)))
+            raise(Exception('type %s not in mapping: %r' % (test_type, mapping)))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
-        self.assertEqual(mapping_date_format,'dateOptionalTime')
+        self.assertEqual(mapping_date_format, 'dateOptionalTime')
 
         # Verify the document was created and has the proper date
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue('exists' in search_result and search_result['exists'])
-        self.assertEqual('2012-11-12T14:30:03Z',search_result['_source']['updated'])
+        self.assertEqual('2012-11-12T14:30:03Z', search_result['_source']['updated'])
 
     def _test_custom_encoder(self, es, es_encoder):
         # Ensure the document does not already exist
         test_type = 'customdatetimetesttype'
         test_id = 456
         try:
-            search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+            es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
             self.fail("Document should not exist")
         except ElasticException as e:
             self.assertTrue(e.status_code >= 404)
 
         # Ensure no mapping exists for this type
         try:
-            mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
+            es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,404)
+            self.assertEqual(e.status_code, 404)
 
         # Create a sample document with a datetime
         eastern_timezone = timezone('US/Eastern')
         test_updated = datetime(2012, 11, 12, 9, 30, 3, tzinfo=eastern_timezone)
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'dateme',
-            'updated' : test_updated
+            'updated': test_updated
         }, params={
             'refresh': 'true'
         }, json_encoder=test_encoder.encode_custom)
@@ -343,17 +349,17 @@ class TestElasticCore(unittest.TestCase):
         # Verify the mapping was created properly
         mapping = es.get('%s/%s/_mapping' % (config.ES_INDEX, test_type))
         mapping_date_format = mapping[test_type]['properties']['updated']['format']
-        self.assertEqual(mapping_date_format,'dateOptionalTime')
+        self.assertEqual(mapping_date_format, 'dateOptionalTime')
 
         # Verify the document was created and has the proper date
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue(search_result['exists'])
-        self.assertEqual('2012-11-12',search_result['_source']['updated'])
+        self.assertEqual('2012-11-12', search_result['_source']['updated'])
 
         # Ensure that the class level encoder works
         # Encode a new doc w class encoder
         encoded_test_id = 12412545
-        encoded_insert_result = es_encoder.put('%s/%s/%s' % (config.ES_INDEX, test_type, encoded_test_id), data={
+        es_encoder.put('%s/%s/%s' % (config.ES_INDEX, test_type, encoded_test_id), data={
             'name': 'dateme',
             'updated' : test_updated
         }, params={
@@ -368,7 +374,7 @@ class TestElasticCore(unittest.TestCase):
         test_type = 'customdecodertype'
         test_id = 889988
         try:
-            search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
+            es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
             self.fail("Document should not exist")
         except ElasticException as e:
             self.assertEqual(e.status_code,404)
@@ -376,7 +382,7 @@ class TestElasticCore(unittest.TestCase):
         # Create a sample document with a value %Y-%m-%d
         insert_result = es.put('%s/%s/%s' % (config.ES_INDEX, test_type, test_id), data={
             'name': 'testdecode',
-            'updated' : "2013-07-04"
+            'updated': "2013-07-04"
         }, params={
             'refresh': 'true'
         })
@@ -389,7 +395,7 @@ class TestElasticCore(unittest.TestCase):
         # Ensure the document was created
         search_result = es.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
         self.assertTrue(search_result['exists'])
-        self.assertEqual('2013-07-04',search_result['_source']['updated'])
+        self.assertEqual('2013-07-04', search_result['_source']['updated'])
 
         # Ensure the class level json decoder works
         search_result_constructor_decoded = es_decoder.get('%s/%s/%s' % (config.ES_INDEX, test_type, test_id))
@@ -409,10 +415,10 @@ class TestElasticCore(unittest.TestCase):
         self.assertEqual(search_result_decoded['_source']['updated'].day, 04)
         self.assertEqual(search_result_decoded['_source']['updated'].tzinfo, pytz.utc)
 
-    def _test_timeout(self,es_short_timeout):
+    def _test_timeout(self, es_short_timeout):
         timed_out = False
         try:
-            result = es_short_timeout.get("/_mapping")
+            es_short_timeout.get("/_mapping")
         except Exception as e:
             timed_out = str("{0}".format(e)).find('timed out') > -1
         self.assertTrue(timed_out)
@@ -422,18 +428,17 @@ class TestElasticCore(unittest.TestCase):
             es[config.ES_INDEX].nopedontexist.get()
             self.fail("Document should not exist")
         except ElasticException as e:
-            self.assertEqual(e.status_code,400)
+            self.assertEqual(e.status_code, 400)
 
-    def _wait_for_good_health(self,es):
+    def _wait_for_good_health(self, es):
         # Give elasticsearch a few seconds to turn 'yellow' or 'green' after an operation
         # Try 6 times
         interval = 0.25
         good_health = False
-        for i in range(5):
+        for _ in xrange(5):
             health = es.get("_cluster/health")
             if health["status"] == "green" or health["status"] == "yellow":
                 good_health = True
                 break
             time.sleep(interval)
         self.assertTrue(good_health)
-
