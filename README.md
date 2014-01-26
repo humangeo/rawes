@@ -39,12 +39,12 @@ es.get('tweets/tweet/_search', data={
 The rawes.Elastic constructor takes the following parameters (defaults shown):
 ```python
 rawes.Elastic(
-    url='http://localhost:9200',    # Protocol, host, and port of elasticsearch service. 
+    url='http://localhost:9200',    # Protocol, host, and port of elasticsearch service. Can be a list of hosts.
                                     # Valid protocols: http, https, thrift
                                     # Default protocol is http, unless port is in range 9500-9600, then thrift
                                     # Default ports: http=9200, https=443, thrift=9500
     timeout=30,                     # Timeout in seconds,
-    **kwrgs                         # http(s) only: additional parameters you wish to pass 
+    **kwrgs                         # http(s) only: additional parameters you wish to pass
                                     # to the python 'requests' library (for example, basic auth)
 )
 ```
@@ -56,6 +56,7 @@ es = rawes.Elastic()                        # will connect to: http://localhost:
 es = rawes.Elastic('https://localhost')     # will connect to: https://localhost:443
 es = rawes.Elastic('thrift://localhost')    # will connect to: thrift://localhost:9500
 es = rawes.Elastic('https://example.org:8443', auth=('user','pass'))  # https with basic auth connection to: https://example.org:8443
+es = rawes.Elastic(['http://host1:9200', 'http://host2:9200', 'http://host3:9200'])    # Each call will be issued to a different host, default is RoundRobin strategy
 ```
 
 An instance of rawes.Elastic ('es' in this case) has methods for get, post, put, delete, and head (for each http verb).  Each method takes the following parameters (defaults shown):
@@ -202,7 +203,7 @@ es['tweets,blogs']._search.get(data='{"query" : {"match_all" : {}}}')
 JSON Encoding
 -------------
 
-By default, rawes will encode datetimes (timezone required!) to UTC ISO8601 strings with 'second' precision before handing the JSON off to elasticsearch.  If elasticsearch has no mapping defined, this will result in the default mapping of 'dateOptionalTime.'  
+By default, rawes will encode datetimes (timezone required!) to UTC ISO8601 strings with 'second' precision before handing the JSON off to elasticsearch.  If elasticsearch has no mapping defined, this will result in the default mapping of 'dateOptionalTime.'
 Timezones are required for this automatic serialization: you may want to use a python module like python-dateutil (Python 2.x only) or pytz to make your life easier.
 ```python
 from datetime import datetime
@@ -299,7 +300,7 @@ class Iso8601JsonDecoder(json.JSONDecoder):
     """
     def __init__(self):
         json.JSONDecoder.__init__(self, object_hook=self.dict_to_object)
-    
+
     def dict_to_object(self, d):
         for k,v in d.iteritems():
             if k == "post_date":
@@ -335,8 +336,8 @@ es = rawes.Elastic('localhost:9200')
 try:
     es.get('invalid_index/invalid_type/123')
 except ElasticException as e:
-    # since our index is invalid, this exception handler will run  
-    print e.result 
+    # since our index is invalid, this exception handler will run
+    print e.result
     # prints: {u'status': 404, u'error': u'IndexMissingException[[invalid_index] missing]'}
     print e.status_code
     # prints: 404
