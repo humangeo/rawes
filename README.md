@@ -371,6 +371,7 @@ import rawes
 es_thrift = rawes.Elastic(['http://host1:9200', 'http://host2:9200', 'http://host3:9200'])
 ```
 
+If you want to change the pooling strategy or other connection pool parameters you can pass in a kwargs dictionary to the rawes constructor (`connection_pool_kwargs`). Check out `rawes/connection_pool.py` for details on the available parameters.
 
 Run Unit Tests
 --------------

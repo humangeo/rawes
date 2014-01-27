@@ -19,7 +19,7 @@ class TestConnectionPooling(unittest.TestCase):
         """
         hosts = ['http://someserver1:9200', 'http://someserver2:9200',
                  'http://someserver3:9200']
-        es = Elastic(hosts)
+        es = Elastic(hosts, connection_pool_kwargs={'dead_timeout': 10})
         with patch('rawes.http_connection.requests.Session.request',
                 MagicMock(return_value=None)) as request:
             request.return_value = Response()

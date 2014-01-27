@@ -203,9 +203,6 @@ class ConnectionPool(object):
         # no live nodes, resurrect one by force
         if not self.connections:
             self.resurrect(True)
-
         connection = self.selector.select(self.connections)
 
         return connection
-
-

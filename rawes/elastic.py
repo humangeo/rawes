@@ -37,7 +37,9 @@ class Elastic(object):
     def __init__(self, url='localhost:9200', path='', timeout=30,
                  connection=None,
                  json_encoder=encode_date_optional_time,
-                 connection_pool=None, **kwargs):
+                 connection_pool=None,
+                 connection_pool_kwargs={},
+                 **kwargs):
         """Constructs an :class:`Elastic <Elastic>`, client object.
         Returns :class:`Elastic <Elastic>` object.
 
@@ -58,6 +60,9 @@ class Elastic(object):
         :param connection_pool: (optional) if you have a connection pool object
             that you want to reuse you can pass it in here; in this case, the
             url value will be ignored
+        :param connection_pool_kwargs: (optional) a dictionary of arguments to
+            be passed to the connection pool in order to expose its options
+            directly to the rawes constructor
         """
 
         super(Elastic, self).__init__()
@@ -85,10 +90,12 @@ class Elastic(object):
 
                 connection_pool = ConnectionPool([(
                                 self._get_connection_from_url(host_url, timeout,
-                                **kwargs), {}) for host_url in urls])
+                                **kwargs), {}) for host_url in urls],
+                                **connection_pool_kwargs)
 
             else:
-                connection_pool = ConnectionPool([(connection, None)])
+                connection_pool = ConnectionPool([(connection, None)],
+                                                 **connection_pool_kwargs)
 
         self.path = path
         self.timeout = timeout  # seconds
