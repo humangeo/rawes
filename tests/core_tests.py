@@ -334,7 +334,7 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(insert_result['ok'])
 
         # Flush the index after adding the new item to ensure the mapping is updated
-        refresh_result = es.post('%s/_flush' % config.ES_INDEX)
+        refresh_result = es.post('%s/_refresh' % config.ES_INDEX)
         self.assertTrue(refresh_result['ok'])
 
         # Verify the mapping was created properly
@@ -380,7 +380,7 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(insert_result['ok'])
 
         # Flush the index after adding the new item to ensure the mapping is updated
-        refresh_result = es.post('%s/_flush' % config.ES_INDEX)
+        refresh_result = es.post('%s/_refresh' % config.ES_INDEX)
         self.assertTrue(refresh_result['ok'])
 
         # Ensure the document was created
