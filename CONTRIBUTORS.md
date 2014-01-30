@@ -11,4 +11,4 @@ rawes is made possible by contributions from:
 * Vincent Driessen [@nvie](https://github.com/nvie) [github.com/nvie](https://github.com/nvie)
 * adisbladis [github.com/adisbladis](https://github.com/adisbladis)
 * Simon Kelly [github.com/snopoke](https://github.com/snopoke)
-* Mihai Oprea [github.com/snopoke](https://github.com/mishu-)
+* Mihai Oprea [github.com/mishu-](https://github.com/mishu-)
