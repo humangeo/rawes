@@ -3,7 +3,7 @@ History
 
 0.5.4 (2014-1)
 ----------------
-* Added connection pooling from [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py)
+* Added connection pooling from [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py) (thanks [mishu-](https://github.com/mishu-))
 
 0.5.3 (2013-7-4)
 ----------------

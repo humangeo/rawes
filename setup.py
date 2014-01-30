@@ -29,7 +29,8 @@ install_requires = [
 ]
 
 extras_requires = {
-    'thrift': ['thrift==0.8.0']
+    'thrift': ['thrift==0.8.0'],
+    'mock': ['mock==1.0.1']
 }
 
 classifiers = [
@@ -40,7 +41,7 @@ classifiers = [
 ]
 
 setup(name='rawes',
-      version='0.5.3',
+      version='0.5.4',
       description='rawes elasticsearch driver',
       long_description="\n{0}\n\n{1}".format(README, CHANGES),
       author='Dan Noble',

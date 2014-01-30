@@ -92,6 +92,13 @@ class TestElasticCore(unittest.TestCase):
             self._test_custom_encoder(self.es_thrift, es_encoder=es_thrift_encoder)
             self._test_custom_decoder(self.es_thrift, es_decoder=es_thrift_decoder)
 
+    def test_unicode_url(self):
+        with mock.patch('rawes.http_connection.HttpConnection.__init__',
+                mock.MagicMock(return_value=None)) as new_connection:
+            rawes.Elastic(u'http://localhost:9200')
+            new_connection.assert_called_with(u'http://localhost:9200',
+                                              timeout=30)
+
     def test_empty_constructor(self):
         with mock.patch('rawes.http_connection.HttpConnection.__init__',
                 mock.MagicMock(return_value=None)) as new_connection:

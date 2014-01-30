@@ -364,20 +364,33 @@ es_thrift = rawes.Elastic('thrift://localhost:8500')
 
 Connection Pooling
 ------------------
-Conenction pooling support was added by importing over the code that is already present in [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py/blob/master/elasticsearch/connection_pool.py)
-Right now the way it works is by simply giving a lists of hosts as a parameter to the rawes constructor. This will enable calls to be executed to this list of hosts in a round robin fashion.
+rawes supports connection pooling of elasticsearch hosts:
+
 ```python
 import rawes
-es_thrift = rawes.Elastic(['http://host1:9200', 'http://host2:9200', 'http://host3:9200'])
+es = rawes.Elastic(['http://host1:9200', 'http://host2:9200', 'http://host3:9200'])
 ```
 
-If you want to change the pooling strategy or other connection pool parameters you can pass in a kwargs dictionary to the rawes constructor (`connection_pool_kwargs`). Check out `rawes/connection_pool.py` for details on the available parameters.
+The class cycles through these hosts in a round robin fashion with each request method call. 
+You can change the connection pool strategy, or other connection pool parameters, by passing options to the `rawes.Elastic` constructor's `connection_pool_kwargs` argument:
+
+```python
+import rawes
+es = rawes.Elastic(['http://host1:9200', 'http://host2:9200', 'http://host3:9200'], connection_pool_kwargs={
+    "selector_class" : rawes.connection_pool.RandomSelector
+})
+```
+
+See [rawes/connection_pool.py](https://github.com/uberVU/rawes/blob/master/rawes/connection_pool.py) for details on all available parameters.
+
+The conncetion pooling implementation used is from the [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py/blob/master/elasticsearch/connection_pool.py) project.
 
 Run Unit Tests
 --------------
-rawes' unit tests require the python thrift module to run:
+rawes' unit tests require the python thrift and mock modules to run:
 ```bash
 $ pip install thrift
+$ pip install mock
 ```
 
 Run tests:

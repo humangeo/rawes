@@ -15,3 +15,5 @@
 #
 
 from tests.core_tests import *
+from tests.connection_pool_tests import *
+from tests.integration.connection_pool_integration_tests import *
