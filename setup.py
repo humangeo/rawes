@@ -41,7 +41,7 @@ classifiers = [
 ]
 
 setup(name='rawes',
-      version='0.5.4',
+      version='0.5.5',
       description='rawes elasticsearch driver',
       long_description="\n{0}\n\n{1}".format(README, CHANGES),
       author='Dan Noble',

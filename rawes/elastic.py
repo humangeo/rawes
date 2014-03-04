@@ -19,6 +19,7 @@ import sys
 from .connection_pool import ConnectionPool
 from .encoders import encode_date_optional_time
 from .http_connection import HttpConnection
+from .utils import isstr
 try:
     import simplejson as json
 except ImportError:
@@ -62,11 +63,11 @@ class Elastic(object):
 
         super(Elastic, self).__init__()
 
-        if not isinstance(url, list) and not isinstance(url, basestring):
+        if not isinstance(url, list) and not isstr(url):
             raise ValueError('Url provided is not of right type')
 
         # Clean up url of any path items
-        if isinstance(url, basestring):
+        if isstr(url):
             decoded_url = self._decode_url(url, '')
             path = self._build_path(decoded_url.path, path)
             url = decoded_url.netloc
@@ -74,7 +75,7 @@ class Elastic(object):
                 url = '{0}://{1}'.format(decoded_url.scheme, url)
 
         if connection_pool is None:
-            urls = [url] if isinstance(url, basestring) else url
+            urls = [url] if isstr(url) else url
             # Validate all urls are of correct format host:port
             for host_url in urls:
                 if '//' not in host_url:
@@ -195,3 +196,4 @@ class Elastic(object):
                                     "does not seem to be installed.")
             return ThriftConnection(url.hostname, url.port,
                                     timeout=timeout, **kwargs)
+

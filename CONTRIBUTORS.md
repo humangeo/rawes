@@ -12,3 +12,5 @@ rawes is made possible by contributions from:
 * adisbladis [github.com/adisbladis](https://github.com/adisbladis)
 * Simon Kelly [github.com/snopoke](https://github.com/snopoke)
 * Mihai Oprea [github.com/mishu-](https://github.com/mishu-)
+* Ali-Akber Saifee [github.com/https://github.com/alisaifee](https://github.com/alisaifee)
+* vinise [https://github.com/vinise](https://github.com/vinise)

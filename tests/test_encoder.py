@@ -17,6 +17,7 @@
 import datetime
 import pytz
 import json
+from rawes.utils import isstr
 
 def encode_custom(obj):
     """
@@ -34,8 +35,8 @@ class DateAwareJsonDecoder(json.JSONDecoder):
         json.JSONDecoder.__init__(self, object_hook=self.dict_to_object)
     
     def dict_to_object(self, d):
-        for k,v in d.iteritems():
-            if type(v) == unicode:
+        for k,v in d.items():
+            if isstr(v):
                 try:
                     d[k] = pytz.utc.localize(datetime.datetime.strptime( v, "%Y-%m-%d"))
                 except Exception as e:

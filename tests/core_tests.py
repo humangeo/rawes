@@ -409,8 +409,8 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(search_result_constructor_decoded['exists'])
         self.assertEqual(type(search_result_constructor_decoded['_source']['updated']),datetime)
         self.assertEqual(search_result_constructor_decoded['_source']['updated'].year, 2013)
-        self.assertEqual(search_result_constructor_decoded['_source']['updated'].month, 07)
-        self.assertEqual(search_result_constructor_decoded['_source']['updated'].day, 04)
+        self.assertEqual(search_result_constructor_decoded['_source']['updated'].month, 7)
+        self.assertEqual(search_result_constructor_decoded['_source']['updated'].day, 4)
         self.assertEqual(search_result_constructor_decoded['_source']['updated'].tzinfo, pytz.utc)
 
         # Ensure the request level json decoder works
@@ -418,8 +418,8 @@ class TestElasticCore(unittest.TestCase):
         self.assertTrue(search_result_decoded['exists'])
         self.assertEqual(type(search_result_decoded['_source']['updated']), datetime)
         self.assertEqual(search_result_decoded['_source']['updated'].year, 2013)
-        self.assertEqual(search_result_decoded['_source']['updated'].month, 07)
-        self.assertEqual(search_result_decoded['_source']['updated'].day, 04)
+        self.assertEqual(search_result_decoded['_source']['updated'].month, 7)
+        self.assertEqual(search_result_decoded['_source']['updated'].day, 4)
         self.assertEqual(search_result_decoded['_source']['updated'].tzinfo, pytz.utc)
 
     def _test_timeout(self, es_short_timeout):
@@ -442,7 +442,7 @@ class TestElasticCore(unittest.TestCase):
         # Try 6 times
         interval = 0.25
         good_health = False
-        for _ in xrange(5):
+        for _ in range(5):
             health = es.get("_cluster/health")
             if health["status"] == "green" or health["status"] == "yellow":
                 good_health = True

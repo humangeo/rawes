@@ -1,6 +1,11 @@
 History
 =========
 
+0.5.5 (2014-1)
+--------------
+* Removed tests package from setup.py (thanks [alisaifee](https://github.com/alisaifee))
+
+
 0.5.4 (2014-1)
 ----------------
 * Added connection pooling from [elasticsearch-py](https://github.com/elasticsearch/elasticsearch-py) (thanks [mishu-](https://github.com/mishu-))
